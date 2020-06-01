@@ -1,0 +1,167 @@
+<template>
+    <div class="main-box">
+        <div class="title-box">
+            <input class="title-ipt"
+                   v-model="title"></input>
+        </div>
+        <div class="content-box">
+            <!--<textarea class="content-ipt" v-model="content" @keyup.enter="onEnter" @keydown.tab="onTab"></textarea>-->
+            <div class="content-ipt" v-model="content" @keyup.enter="onEnter" @keydown.tab="onTab" contenteditable="plaintext-only"></div>
+            <!--<editor ref="edit"/>-->
+        </div>
+        <div class="info-box">
+            <div class="info-box-l">
+                <span>{{contentLength}}/3000</span>
+            </div>
+            <div class="info-box-m">
+                <span>2020-03-27 09:15:30</span>
+            </div>
+            <div class="info-box-r">
+                <el-button size="mini" @click="setText">set</el-button>
+                <el-button size="mini" @click="getText">Text</el-button>
+                <el-button size="mini" @click="getHtml">Html</el-button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+  // import redis from 'redis'
+  import Editor from '@/components/Editor/Editor'
+
+  export default {
+    name: 'MainTabs',
+    components: {Editor},
+    data () {
+      return {
+        title: '腾云',
+        content: '12345，腾云驾雾。ABCDE,abcde.\n\t12345，腾云驾雾。ABCDE,abcde.\n12345，腾云驾雾。ABCDE,abcde.\n12345，腾云驾雾。ABCDE,abcde.\n12345，腾云驾雾。ABCDE,abcde.',
+        contentLength: 0
+      }
+    },
+    watch: {
+      content () {
+        if (this.content) {
+          this.contentLength = this.content.length
+        } else {
+          this.contentLength = 0
+        }
+      }
+    },
+    methods: {
+      setText () {
+        this.$refs.edit.setContent('12345，上山打老虎。ABCDE,abcde.12345，上山打老虎。ABCDE,abcde.12345，上山打老虎。ABCDE,abcde.')
+      },
+      getText () {
+        console.log(this.$refs.edit.getText())
+      },
+      getHtml () {
+        console.log(this.$refs.edit.getHtml())
+      },
+      onTab (e) {
+        console.log('onTab', e)
+        let indent = '\t'
+        let start = e.target.selectionStart // 光标起始位置
+        let end = e.target.selectionEnd // 光标结束位置
+        let selected = this.content.substring(start, end) // 选中内容
+        console.log('start:', start)
+        console.log('end:', end)
+        console.log('selected:', selected)
+        selected = indent + selected.replace(/\n/g, '\n' + indent)
+        console.log('after selected:', selected)
+        console.log('this.content.substring(0, start) = ', this.content.substring(0, start))
+        console.log('this.content.substring(end) = ', this.content.substring(end))
+        this.content = this.content.substring(0, start) + selected + this.content.substring(end)
+        e.target.blur()
+        setTimeout(() => {
+          // e.target.setSelectionRange(start, end + indent.length)
+          e.target.selectionStart = start + indent.length
+          e.target.selectionEnd = end + indent.length
+          start = e.target.selectionStart // 光标起始位置
+          end = e.target.selectionEnd // 光标结束位置
+          console.log('after start:', start)
+          console.log('after end:', end)
+          e.target.focus()
+        })
+        e.returnValue = false
+      },
+      onEnter () {
+        console.log('onEnter')
+        this.content += '\t'
+      }
+    }
+  }
+</script>
+
+<style lang="less" scoped>
+
+    @import '../../common.less';
+
+    .main-box {
+        width: 100%;
+        height: 100%;
+        background-color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        .title-box {
+            width: calc(100% - 40px);
+            height: 69px;
+            padding: 0 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            .title-ipt {
+                width: calc(100% - 120px);
+                /*height: calc(100% - 190px);*/
+                /*resize: none;*/
+                /*padding: 60px;*/
+                border: none;
+                outline: none;
+                font-size: @fontSizeBig;
+            }
+        }
+        .content-box{
+            width: 100%;
+            height: calc(100% - 100px);
+            .content-ipt {
+                width: calc(100% - 120px);
+                height: calc(100% - 120px);
+                resize: none;
+                padding: 60px;
+                border: none;
+                outline: none;
+                font-size: @fontSizeNormal;
+                color: @wxColorBlack;
+            }
+        }
+        .info-box {
+            width: calc(100% - 40px);
+            height: 29px;
+            padding: 0 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            font-size: @fontSizeTiny;
+            color: @wxColorGray;
+            align-items: center;
+            justify-content: space-between;
+            .info-box-l{
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .info-box-m{
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .info-box-r{
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+    }
+
+</style>
