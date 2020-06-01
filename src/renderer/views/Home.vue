@@ -3,7 +3,7 @@
 
         <el-header height="60px" style="padding: 0;">
             <div class="head-box">
-                <span style="margin: 0 10px;">12345，上山打老虎</span>
+                <span style="margin: 0 10px;">12345!</span>
                 <!--<el-button @click="bigFont">+</el-button>-->
                 <!--<el-button @click="smallFont">-</el-button>-->
                 <el-button type="primary" icon="el-icon-circle-plus-outline" round
