@@ -1,17 +1,22 @@
 <template>
 
     <div class="tree-menu-item">
-        <div class="tree-menu-item-content" :class="{'active' : item._id === home.activeDirectory._id}" :title="item.title"
-             @click="clickMenu"
-             @dblclick="dbclickMenu"
+        <div class="tree-menu-item-content" :class="{'active' : item.path === home.activeFile.path}" :title="item.title"
+             @click="clickFile"
+             @dblclick="dbclickFile"
              @contextmenu="contextmenuHandler">
 
+            <!--三角标-->
             <i class="menu-icon-dir" :style="{marginLeft: level * 20 + 'px'}"
                :class="{'hidden' : !item.hasChild, 'el-icon-caret-bottom' : item.isOpen, 'el-icon-caret-right' : !item.isOpen}"
                @click="openOrClose"></i>
-            <i v-if="item.isFolder" class="menu-icon-folder"
-               :class="{'el-icon-folder-opened' : item.isOpen, 'el-icon-folder' : !item.isOpen}"></i>
 
+            <!--图标-->
+            <i v-if="item.fileType == 'directory'" class="menu-icon"
+               :class="{'el-icon-folder-opened' : item.isOpen, 'el-icon-folder' : !item.isOpen}"></i>
+            <i v-else-if="item.fileType == 'normal'" class="menu-icon el-icon-document"></i>
+
+            <!--名称-->
             <div v-if="renameStatus" class="menu-title">
                 <input v-model="newTitle"
                        v-focus="renameStatus"
@@ -22,6 +27,7 @@
                        @contextmenu.stop="doNothing"></input>
             </div>
             <div v-else class="menu-title">{{item.title}}</div>
+            <i v-show="item.loading" class="el-icon-loading"></i>
 
         </div>
 
@@ -29,6 +35,9 @@
             <template v-for="(it, i) in item.children" :index="i.toString()">
                 <TreeMenu :item="it" :index="i" :level="level + 1" :home="home"></TreeMenu>
             </template>
+            <div v-show="!item.children || item.children.length == 0" style="width: 100%;text-align: center;">
+                <i class="el-icon-loading"></i>
+            </div>
         </div>
 
     </div>
@@ -73,7 +82,9 @@
           sysMonsterMenuContextMenu: {}, // 妖怪上下文菜单
           sysSkillMenuContextMenu: {}, // 招式上下文菜单
           sysReferenceMenuContextMenu: {}, // 引用上下文菜单
-          userFolderContextMenu: {} // 用户文件夹上下文菜单
+
+          userFolderContextMenu: {}, // 用户文件夹上下文菜单
+          userFileContextMenu: {} // 用户文件上下文菜单
         },
         renameStatus: false, // 重命名状态
         newTitle: ''
@@ -95,27 +106,32 @@
         } else {
           this.renameStatus = false
           this.item.title = this.newTitle
-          fileService.updateDirectory(this.item)
+          this.$set(this.item, 'loading', true)
+          fileService.renameFile(this.item).then(_ => {
+            this.$set(this.item, 'loading', false)
+          })
         }
       },
-      clickMenu () {
-        this.home.activeDirectory = this.item
+      clickFile () {
+        this.home.activeFile = this.item
       },
       refreshDirectoryContent () {
         this.home.findDirectoryContent()
       },
-      dbclickMenu () {
+      dbclickFile () {
         if (this.item.hasChild) this.openOrClose()
-        this.clickMenu()
+        this.clickFile()
       },
       openOrClose () {
-        this.item.isOpen = !this.item.isOpen
+        this.$set(this.item, 'isOpen', !this.item.isOpen)
+        // this.item.isOpen = !this.item.isOpen
+        // this.$forceUpdate()
         if (!this.item.children || this.item.children.length < 1) {
-          fileService.findDirectoryList(this.item.bookId, this.item._id).then(
+          fileService.findFiles(this.item.path).then(
             ret => {
-              console.log('fileService.findDirectoryList ret', ret)
-              this.item.children = ret
-              this.$forceUpdate()
+              this.$set(this.item, 'children', ret)
+              // this.item.children = ret
+              // this.$forceUpdate()
             }
           )
         }
@@ -124,7 +140,7 @@
       contextmenuHandler (e) {
         console.log('contextmenuHandler', e)
         e.preventDefault()
-        this.clickMenu()
+        this.clickFile()
         if (this.item.type === fileService.menuTypeEnum.SYSTEM) {
           switch (this.item._id) {
             case '搜索结果':
@@ -165,7 +181,11 @@
               break
           }
         } else if (this.item.type === fileService.menuTypeEnum.USER) {
-          this.contextMenu.userFolderContextMenu.popup({window: remote.getCurrentWindow()})
+          if (this.item.fileType === fileService.fileTypeEnum.DIR) {
+            this.contextMenu.userFolderContextMenu.popup({window: remote.getCurrentWindow()})
+          } else if (this.item.fileType === fileService.fileTypeEnum.NORMAL) {
+            this.contextMenu.userFileContextMenu.popup({window: remote.getCurrentWindow()})
+          }
         }
       },
       initContextMenu () {
@@ -287,8 +307,9 @@
                     ret => {
                       console.log('fileService.createDirectory ret', ret)
                       this.refreshDirectoryContent()
-                      this.item.hasChild = true
-                      this.$forceUpdate()
+                      this.$set(this.item, 'hasChild', true)
+                      // this.item.hasChild = true
+                      // this.$forceUpdate()
                       fileService.updateDirectory(this.item)
                     }
                   )
@@ -332,6 +353,61 @@
           }
         ]
         this.contextMenu.userFolderContextMenu = remote.Menu.buildFromTemplate(userFolderContextMenuJson)
+        // 用户文件上下文菜单
+        let userFileContextMenuJson = [
+          {
+            label: '重命名',
+            click: () => {
+              console.log('重命名')
+              this.newTitle = this.item.title
+              this.renameStatus = true
+            }
+          },
+          {
+            label: '置顶',
+            click: () => {
+              console.log('文件夹 is clicked')
+            }
+          },
+          {
+            label: '取消置顶',
+            click: () => {
+              console.log('文件夹 is clicked')
+            }
+          },
+          {
+            label: '移动',
+            click: () => {
+              console.log('文件夹 is clicked')
+            }
+          },
+          {
+            label: '复制',
+            click: () => {
+              console.log('文件夹 is clicked')
+            }
+          },
+          {
+            label: '粘贴',
+            click: () => {
+              console.log('文件夹 is clicked')
+            }
+          },
+          {
+            label: '删除',
+            click: () => {
+              console.log('文件夹 is clicked')
+            }
+          },
+          {type: 'separator'},
+          {
+            label: '在新窗口打开',
+            click: () => {
+              console.log('文件夹 is clicked')
+            }
+          }
+        ]
+        this.contextMenu.userFileContextMenu = remote.Menu.buildFromTemplate(userFileContextMenuJson)
         // ==========渲染进程通过remote模块构建动态菜单==========
       }
     }
@@ -360,14 +436,14 @@
         .menu-icon-dir.hidden {
             visibility: hidden;
         }
-        .menu-icon-folder {
+        .menu-icon {
             font-size: 20px;
             padding: 0 5px;
-            font-weight: bold;
+            /*font-weight: bold;*/
         }
         .menu-title {
-            overflow: hidden;
-            text-overflow: ellipsis;
+            /*overflow: hidden;*/
+            /*text-overflow: ellipsis;*/
             white-space: nowrap;
         }
     }

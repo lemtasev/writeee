@@ -120,8 +120,9 @@
           fileService.findList(this.item.bookId, this.item._id).then(
             ret => {
               console.log('fileService.findList ret', ret)
-              this.item.children = ret
-              this.$forceUpdate()
+              this.$set(this.item, 'children', ret)
+              // this.item.children = ret
+              // this.$forceUpdate()
             }
           )
         }
@@ -297,8 +298,9 @@
                     ret => {
                       console.log('fileService.createDirectory ret', ret)
                       this.refreshDirectoryContent()
-                      this.item.hasChild = true
-                      this.$forceUpdate()
+                      this.$set(this.item, 'hasChild', true)
+                      // this.item.hasChild = true
+                      // this.$forceUpdate()
                       fileService.updateDirectory(this.item)
                     }
                   )

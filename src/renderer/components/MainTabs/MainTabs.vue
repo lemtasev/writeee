@@ -2,14 +2,15 @@
     <div class="main-box">
         <div class="title-box">
             <input class="title-ipt"
-                   v-model="item.title || ''"></input>
+                   v-model="item.title" @blur="renameFile"></input>
         </div>
         <div class="content-box">
-            <textarea class="content-ipt" v-model="item.content || ''" @keyup.enter="onEnter" @keydown.tab="onTab"></textarea>
+            <textarea v-show="item.fileType == 'normal'" class="content-ipt" v-model="content" @keyup.enter="onEnter"
+                      @keydown.tab="onTab" @blur="saveContent"></textarea>
         </div>
         <div class="info-box">
             <div class="info-box-l">
-                <span>{{item.content ? item.content.length : 0}}/3000</span>
+                <span>{{content ? content.length : 0}}/3000</span>
             </div>
             <div class="info-box-m">
                 <span>{{$moment(item.createTime).format('YYYY-MM-DD HH:mm:ss') || ''}}</span>
@@ -42,28 +43,40 @@
     data () {
       return {
         // title: '',
-        // content: '',
+        content: '',
         // contentLength: 0
+        fd: null,
+        buf: null
       }
     },
     watch: {
-      // content () {
-      //   if (this.content) {
-      //     this.contentLength = this.content.length
-      //   } else {
-      //     this.contentLength = 0
-      //   }
-      // }
+      item (v) {
+        console.log('item', v)
+        if (v.fileType === fileService.fileTypeEnum.NORMAL) {
+          this.readFile(v)
+        } else {
+          this.content = ''
+        }
+      }
     },
     methods: {
+      renameFile () {
+        this.$set(this.item, 'loading', true)
+        fileService.renameFile(this.item).then(_ => {
+          this.$set(this.item, 'loading', false)
+        })
+      },
+      readFile (weeFile) {
+        fileService.readFile(weeFile.path).then(ret => {
+          this.content = ret
+        })
+      },
       saveContent () {
         console.log(this.item)
-        fileService.updateFile(this.item).then(
-          ret => {
-            console.log('fileService.updateFile ret', ret)
-            this.home.findDirectoryContent()
-          }
-        )
+        this.$set(this.item, 'loading', true)
+        fileService.saveFile(this.item, this.content).then(_ => {
+          this.$set(this.item, 'loading', false)
+        })
       },
       onTab (e) {
         console.log('onTab', e)
@@ -107,9 +120,10 @@
                 font-size: @fontSizeBig;
             }
         }
-        .content-box{
+        .content-box {
             width: 100%;
             height: calc(100% - 100px);
+            background-color: #eee;
             .content-ipt {
                 width: calc(100% - 120px);
                 height: calc(100% - 120px);
@@ -132,17 +146,17 @@
             color: @wxColorGray;
             align-items: center;
             justify-content: space-between;
-            .info-box-l{
+            .info-box-l {
                 display: flex;
                 align-items: center;
                 justify-content: center;
             }
-            .info-box-m{
+            .info-box-m {
                 display: flex;
                 align-items: center;
                 justify-content: center;
             }
-            .info-box-r{
+            .info-box-r {
                 display: flex;
                 align-items: center;
                 justify-content: center;
