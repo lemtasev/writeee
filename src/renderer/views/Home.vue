@@ -9,6 +9,11 @@
                            @click="openBookListDrawer">Book List
                 </el-button>
                 <BookList ref="bookListRef" :home="home"></BookList>
+
+                <el-input v-model="settingKey" placeholder="settingKey"></el-input>
+                <el-input v-model="settingValue" placeholder="settingValue"></el-input>
+                <el-button @click="saveSetting">save</el-button>
+                <el-button @click="findSetting">find</el-button>
             </div>
         </el-header>
 
@@ -69,6 +74,7 @@
   import TreeMenu from '@/components/TreeMenu/TreeMenu'
   // import bookService from '@/service/BookService'
   import fileService from '@/service/FileService'
+  import systemService from '@/service/SystemService'
   import BookList from '@/components/BookList/BookList'
 
   export default {
@@ -94,7 +100,10 @@
         workspace: '/Users/yangqi/work/myproject/electron-all-projects/workspace',
         // workspace: '/Users/yangqi',
         files: [],
-        activeFile: {}
+        activeFile: {},
+
+        settingKey: '',
+        settingValue: ''
       }
     },
     watch: {
@@ -107,6 +116,16 @@
       this.findFiles(this.workspace)
     },
     methods: {
+      saveSetting () {
+        systemService.saveUserSetting(this.settingKey, this.settingValue).then(ret => {
+          console.log(ret)
+        })
+      },
+      findSetting () {
+        systemService.findUserSetting(this.settingKey).then(ret => {
+          console.log(ret)
+        })
+      },
       findFiles (path) {
         fileService.findFiles(path).then(ret => {
           this.files = ret

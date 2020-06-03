@@ -35,7 +35,7 @@
             <template v-for="(it, i) in item.children" :index="i.toString()">
                 <TreeMenu :item="it" :index="i" :level="level + 1" :home="home"></TreeMenu>
             </template>
-            <div v-show="!item.children || item.children.length == 0" style="width: 100%;text-align: center;">
+            <div v-show="!item.children" style="width: 100%;text-align: center;">
                 <i class="el-icon-loading"></i>
             </div>
         </div>

@@ -11,6 +11,11 @@ export default new Router({
       component: require('@/views/Home').default
     },
     {
+      path: '/Setting',
+      name: '/Setting',
+      component: require('@/views/Setting').default
+    },
+    {
       path: '*',
       redirect: '/'
     }

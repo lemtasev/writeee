@@ -1,7 +1,7 @@
 'use strict'
 
-// import { app, BrowserWindow, Menu, Tray, clipboard, nativeImage, Menu, MenuItem, ipcMain } from 'electron'
-import { app, BrowserWindow } from 'electron'
+// import { app, BrowserWindow, Menu, Tray, clipboard, nativeImage, MenuItem, ipcMain } from 'electron'
+import { app, BrowserWindow, Menu, dialog } from 'electron'
 import path from 'path'
 
 /**
@@ -17,6 +17,7 @@ const winURL = process.env.NODE_ENV === 'development'
   ? `http://localhost:9080`
   : `file://${__dirname}/index.html`
 
+let settingWin
 function createWindow () {
   /**
    * Initial window options
@@ -37,15 +38,20 @@ function createWindow () {
     mainWindow = null
   })
 
-  // let child = new BrowserWindow({
-  //   // modal: true,
-  //   show: false,
-  //   parent: mainWindow
-  // })
-  // child.loadURL('https://github.com')
-  // child.once('ready-to-show', () => {
-  //   child.show()
-  // })
+  settingWin = new BrowserWindow({
+    // modal: true,
+    alwaysOnTop: true,
+    show: false,
+    parent: mainWindow
+  })
+  settingWin.loadURL(winURL + '#Setting')
+  settingWin.once('ready-to-show', () => {
+    // settingWin.show()
+  })
+  settingWin.on('closed', () => {
+    settingWin = null
+  })
+  Menu.setApplicationMenu(Menu.buildFromTemplate(systemMenuJson))
 }
 
 // let tray
@@ -104,6 +110,151 @@ app.on('window-all-closed', () => {
     app.quit()
   }
 })
+
+// ==========构建系统菜单==========
+const isMac = process.platform === 'darwin'
+let systemMenuJson = [
+  // { role: 'appMenu' }
+  ...(isMac ? [{
+    label: app.name,
+    submenu: [
+      { role: 'about' },
+      {
+        label: '检查更新……',
+        // accelerator: 'CmdOrCtrl+R',
+        click: function () {
+          dialog.showMessageBox({
+            message: '怎么肯能有这种功能?',
+            type: 'warning' // "none", "info", "error", "question" 或者 "warning"
+          })
+        }
+      },
+      { type: 'separator' },
+      {
+        label: '偏好设置',
+        // accelerator: 'CmdOrCtrl+R',
+        click: function () {
+          settingWin.show()
+        }
+      },
+      { type: 'separator' },
+      { role: 'services' },
+      { type: 'separator' },
+      { role: 'hide' },
+      { role: 'hideothers' },
+      { role: 'unhide' },
+      { type: 'separator' },
+      { role: 'quit' }
+    ]
+  }] : []),
+  // { role: 'fileMenu' }
+  {
+    label: '文件',
+    submenu: [
+      {
+        label: '新建',
+        submenu: [
+          {
+            label: '章'
+            // icon: '/'
+            // sublabel: 'hahaha'
+          },
+          {
+            label: '卷'
+          },
+          {
+            label: '书'
+          },
+          { type: 'separator' },
+          {
+            label: '人物'
+          },
+          {
+            label: '物品'
+          }
+        ]
+      },
+      isMac ? { role: 'close' } : { role: 'quit' }
+    ]
+  },
+  // { role: 'editMenu' }
+  {
+    label: '编辑',
+    submenu: [
+      {
+        label: '撤销',
+        accelerator: 'CmdOrCtrl+Z',
+        role: 'undo'
+      },
+      { role: 'redo' },
+      { type: 'separator' },
+      { role: 'cut' },
+      { role: 'copy' },
+      { role: 'paste' },
+      ...(isMac ? [
+        { role: 'pasteAndMatchStyle' },
+        { role: 'delete' },
+        { role: 'selectAll' },
+        { type: 'separator' },
+        {
+          label: 'Speech',
+          submenu: [
+            { role: 'startspeaking' },
+            { role: 'stopspeaking' }
+          ]
+        }
+      ] : [
+        { role: 'delete' },
+        { type: 'separator' },
+        { role: 'selectAll' }
+      ])
+    ]
+  },
+  // { role: 'viewMenu' }
+  {
+    label: '视图',
+    submenu: [
+      { role: 'reload' },
+      { role: 'forcereload' },
+      { role: 'toggledevtools' },
+      { type: 'separator' },
+      { role: 'resetzoom' },
+      { role: 'zoomin' },
+      { role: 'zoomout' },
+      { type: 'separator' },
+      { role: 'togglefullscreen' }
+    ]
+  },
+  // { role: 'windowMenu' }
+  {
+    label: '窗口',
+    submenu: [
+      { role: 'minimize' },
+      { role: 'zoom' },
+      ...(isMac ? [
+        { type: 'separator' },
+        { role: 'front' },
+        { type: 'separator' },
+        { role: 'window' }
+      ] : [
+        { role: 'close' }
+      ])
+    ]
+  },
+  {
+    role: '帮助',
+    submenu: [
+      {
+        label: 'Learn More',
+        click: async () => {
+          const { shell } = require('electron')
+          await shell.openExternal('https://electronjs.org')
+        }
+      }
+    ]
+  }
+]
+// ==========构建系统菜单==========
 
 // ==========构建菜单==========
 // const menu = new Menu()
