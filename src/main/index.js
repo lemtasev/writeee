@@ -17,7 +17,6 @@ const winURL = process.env.NODE_ENV === 'development'
   ? `http://localhost:9080`
   : `file://${__dirname}/index.html`
 
-let settingWin
 function createWindow () {
   /**
    * Initial window options
@@ -36,20 +35,6 @@ function createWindow () {
   mainWindow.loadURL(winURL)
   mainWindow.on('closed', () => {
     mainWindow = null
-  })
-
-  settingWin = new BrowserWindow({
-    // modal: true,
-    alwaysOnTop: true,
-    show: false,
-    parent: mainWindow
-  })
-  settingWin.loadURL(winURL + '#Setting')
-  settingWin.once('ready-to-show', () => {
-    // settingWin.show()
-  })
-  settingWin.on('closed', () => {
-    settingWin = null
   })
   Menu.setApplicationMenu(Menu.buildFromTemplate(systemMenuJson))
 }
@@ -111,6 +96,9 @@ app.on('window-all-closed', () => {
   }
 })
 
+let settingWin
+let searchWin
+
 // ==========构建系统菜单==========
 const isMac = process.platform === 'darwin'
 let systemMenuJson = [
@@ -124,7 +112,7 @@ let systemMenuJson = [
         // accelerator: 'CmdOrCtrl+R',
         click: function () {
           dialog.showMessageBox({
-            message: '怎么肯能有这种功能?',
+            message: '怎么可能有这种功能?',
             type: 'warning' // "none", "info", "error", "question" 或者 "warning"
           })
         }
@@ -134,7 +122,23 @@ let systemMenuJson = [
         label: '偏好设置',
         // accelerator: 'CmdOrCtrl+R',
         click: function () {
-          settingWin.show()
+          if (settingWin != null) {
+            settingWin.show() // 展示并且使窗口获得焦点.
+            return
+          }
+          settingWin = new BrowserWindow({
+            // modal: true,
+            alwaysOnTop: true,
+            show: false,
+            parent: mainWindow
+          })
+          settingWin.loadURL(winURL + '#Setting')
+          settingWin.once('ready-to-show', () => {
+            settingWin.show()
+          })
+          settingWin.on('closed', () => {
+            settingWin = null
+          })
         }
       },
       { type: 'separator' },
@@ -181,6 +185,42 @@ let systemMenuJson = [
   {
     label: '编辑',
     submenu: [
+      {
+        label: '搜索',
+        accelerator: 'Ctrl+Shift+F',
+        click: function () {
+          if (searchWin != null) {
+            searchWin.show() // 展示并且使窗口获得焦点.
+            return
+          }
+          searchWin = new BrowserWindow({
+            title: '搜索',
+            frame: false,
+            alwaysOnTop: true,
+            minimizable: false,
+            maximizable: false,
+            // show: false,
+            parent: mainWindow,
+            height: 800,
+            width: 800
+          })
+          searchWin.loadURL(winURL + '#Search')
+          searchWin.once('ready-to-show', () => {
+            // searchWin.show()
+          })
+          searchWin.on('blur', (e) => {
+            searchWin.hide()
+          })
+          searchWin.on('close', (e) => {
+            // searchWin.hide()
+            // e.preventDefault()
+          })
+          searchWin.on('closed', () => {
+            searchWin = null
+          })
+        }
+      },
+      { type: 'separator' },
       {
         label: '撤销',
         accelerator: 'CmdOrCtrl+Z',

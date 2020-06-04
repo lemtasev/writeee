@@ -5,8 +5,12 @@
                    v-model="item.title" @blur="renameFile"></input>
         </div>
         <div class="content-box">
-            <textarea v-show="item.fileType == 'normal'" class="content-ipt" v-model="content" @keyup.enter="onEnter"
+            <textarea v-show="showEdit" class="content-ipt" v-model="content" @keyup.enter="onEnter"
                       @keydown.tab="onTab" @blur="saveContent"></textarea>
+            <div v-show="!showEdit" class="content-message">
+                <i v-show="item.loading" class="el-icon-loading"></i>
+                <span>{{message}}</span>
+            </div>
         </div>
         <div class="info-box">
             <div class="info-box-l">
@@ -45,17 +49,22 @@
         // title: '',
         content: '',
         // contentLength: 0
-        fd: null,
-        buf: null
+        showEdit: false,
+        message: ''
       }
     },
     watch: {
       item (v) {
         console.log('item', v)
+        this.showEdit = false
+        this.content = ''
+        this.message = ''
         if (v.fileType === fileService.fileTypeEnum.NORMAL) {
+          if (v.blksize > 5 * 1024 * 1024) {
+            this.message = '文件过大，无法打开！'
+            return
+          }
           this.readFile(v)
-        } else {
-          this.content = ''
         }
       }
     },
@@ -67,9 +76,15 @@
         })
       },
       readFile (weeFile) {
+        console.log('开始读')
+        this.$set(this.item, 'loading', true)
         fileService.readFile(weeFile.path).then(ret => {
+          console.log('读回调')
           this.content = ret
+          this.showEdit = true
+          this.$set(this.item, 'loading', false)
         })
+        console.log('结束读')
       },
       saveContent () {
         console.log(this.item)
@@ -134,6 +149,14 @@
                 font-size: @fontSizeNormal;
                 font-family: 'Microsoft YaHei';
                 color: @wxColorBlack;
+            }
+            .content-message{
+                width: 100%;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
             }
         }
         .info-box {

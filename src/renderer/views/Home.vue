@@ -23,23 +23,24 @@
                 <div class="left-menu">
 
                     <div class="menu-top">
-                        <el-dropdown>
-                            <el-button type="text" icon="el-icon-circle-plus-outline">
-                                新建<i class="el-icon-caret-bottom"></i>
-                            </el-button>
-                            <el-dropdown-menu slot="dropdown">
-                                <el-dropdown-item>章节</el-dropdown-item>
-                                <el-dropdown-item>文件夹</el-dropdown-item>
-                            </el-dropdown-menu>
-                        </el-dropdown>
+                        <!--<el-dropdown>-->
+                            <!--<el-button type="text" icon="el-icon-circle-plus-outline">-->
+                                <!--新建<i class="el-icon-caret-bottom"></i>-->
+                            <!--</el-button>-->
+                            <!--<el-dropdown-menu slot="dropdown">-->
+                                <!--<el-dropdown-item>章节</el-dropdown-item>-->
+                                <!--<el-dropdown-item>文件夹</el-dropdown-item>-->
+                            <!--</el-dropdown-menu>-->
+                        <!--</el-dropdown>-->
                     </div>
+
                     <div class="menu-content">
 
                         <div class="menu-inline-block">
 
-                            <TreeMenu :item="searchResMenu" :home="home"></TreeMenu>
+                            <!--<TreeMenu :item="searchResMenu" :home="home"></TreeMenu>-->
 
-                            <div class="block-title">正文</div>
+                            <div class="block-title border-top-none">正文</div>
                             <template v-for="(item, index) in files" :index="index.toString()">
                                 <TreeMenu :item="item" :index="index" :home="home"></TreeMenu>
                             </template>
@@ -47,6 +48,7 @@
                         </div>
 
                     </div>
+
                     <div class="menu-bottom">
                         <div class="menu-bottom-l">
                             <span :title="activeFile.path">{{activeFile.path}}</span>

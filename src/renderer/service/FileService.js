@@ -85,7 +85,7 @@ export default {
           if (file.charAt(0) === '.') {
             return
           }
-          console.log(file)
+          // console.log(file)
           let wteeFile = {
             title: file,
             path: path + '/' + file,
@@ -171,7 +171,6 @@ export default {
           console.error('err', err)
           reject(err)
         }
-        // console.log('异步读取: ' + data.toString())
         resolve(data.toString())
       })
     })
