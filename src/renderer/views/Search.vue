@@ -10,7 +10,7 @@
                 <i class="el-icon-arrow-down"></i>
             </div>
             <input v-model="searchInfo" @input="startSearch"></input>
-            <div class="search-res-info">m matches in n files</div>
+            <div class="search-res-info">{{result.length}} matches in {{resultFileCount}} files</div>
             <i class="close-btn el-icon-error" @click="clearSearchInfo"></i>
         </div>
 
@@ -38,11 +38,7 @@
 <script>
   // import {BrowserWindow} from 'electron'
   // import MainTabs from '../components/MainTabs/MainTabs'
-  // import TreeMenu from '@/components/TreeMenu/TreeMenu'
-  // import bookService from '@/service/BookService'
   import fileService from '@/service/FileService'
-  // import systemService from '@/service/SystemService'
-  // import BookList from '@/components/BookList/BookList'
 
   export default {
     name: 'Search',
@@ -50,9 +46,10 @@
     data () {
       return {
         searchInfo: '',
-        workspace: '/Users/yangqi/work/myproject/electron-all-projects/workspace',
-        // workspace: '/Users/yangqi/work/myproject/electron-all-projects/writeee/src',
-        result: []
+        // workspace: '/Users/yangqi/work/myproject/electron-all-projects/workspace',
+        workspace: '/Users/yangqi/work/myproject/electron-all-projects/writeee/src',
+        result: [],
+        resultFileCount: 0
       }
     },
     watch: {
@@ -68,12 +65,12 @@
         console.log('stop old search')
         console.log('start new search')
         this.result = []
+        this.resultFileCount = 0
         let searchInfo = this.searchInfo
         if (!searchInfo) return
-        let regex = new RegExp(searchInfo)
-        this.search(searchInfo, regex, this.workspace)
+        this.search(searchInfo, this.workspace)
       },
-      search (searchInfo, regex, path) {
+      search (searchInfo, path) {
         fileService.findFiles(path).then(ret => {
           if (this.searchInfo !== searchInfo) {
             console.log('搜索内容改变，结束之前的搜索')
@@ -86,18 +83,24 @@
                   console.log('搜索内容改变，结束之前的搜索')
                   return
                 }
-                if (regex.test(data)) {
-                  let r = regex.exec(data)
-                  let ctx = data.substr(r.index - 10, 100)
-                  ctx = ctx.replace(r[0], '$searchInfo$')
-                  ctx = this.encodeHtml(ctx)
-                  ctx = ctx.replace('$searchInfo$', '<span style="background-color: goldenrod;">' + this.encodeHtml(r[0]) + '</span>')
-                  it.ctx = ctx
-                  this.result.push(it)
+                let regex = new RegExp(searchInfo, 'g')
+                let r = regex.exec(data)
+                if (r) {
+                  this.resultFileCount += 1
+                  while (r) {
+                    let ctx = data.substr(r.index - 10, 100)
+                    ctx = ctx.replace(r[0], '$searchInfo$')
+                    ctx = this.encodeHtml(ctx)
+                    ctx = ctx.replace('$searchInfo$', '<span style="background-color: goldenrod;">' + this.encodeHtml(r[0]) + '</span>')
+                    let obj = JSON.parse(JSON.stringify(it))
+                    obj.ctx = ctx
+                    this.result.push(obj)
+                    r = regex.exec(data)
+                  }
                 }
               })
             } else if (it.fileType === fileService.fileTypeEnum.DIR) {
-              this.search(searchInfo, regex, it.path)
+              this.search(searchInfo, it.path)
             }
           })
         })
