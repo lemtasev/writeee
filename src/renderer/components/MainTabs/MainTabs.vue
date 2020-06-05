@@ -32,7 +32,6 @@
 </template>
 
 <script>
-  // import redis from 'redis'
   // import Editor from '@/components/Editor/Editor'
   import fileService from '@/service/FileService'
 
@@ -85,12 +84,12 @@
       },
       // 定位光标到某个位置
       setCursorPos (sPos, ePos) {
-        var obj = this.$refs.ta
+        let obj = this.$refs.ta
+        obj.focus()
         sPos = sPos || 0
         ePos = ePos || obj.value.length
         console.log('setCursorPos', sPos, ePos)
         obj.setSelectionRange(sPos, ePos)
-        obj.focus()
       },
       renameFile () {
         if (!this.modified) return
@@ -108,7 +107,8 @@
           this.content = ret
           this.showEdit = true
           this.$set(this.item, 'loading', false)
-          if (weeFile.sPos) {
+          if (weeFile.sPos != null) {
+            // setTimeout(_ => this.setCursorPos(weeFile.sPos, weeFile.ePos), 1000)
             this.setCursorPos(weeFile.sPos, weeFile.ePos)
           }
         })
@@ -181,7 +181,7 @@
                 font-family: 'Microsoft YaHei';
                 color: @wxColorBlack;
             }
-            .content-message{
+            .content-message {
                 width: 100%;
                 height: 100%;
                 display: flex;

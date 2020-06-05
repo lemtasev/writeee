@@ -176,6 +176,10 @@ export default {
     })
   },
 
+  readFileSync: (path) => {
+    return fs.readFileSync(path).toString()
+  },
+
   saveFile: (weeFile, content) => {
     return new Promise((resolve, reject) => {
       if (!weeFile) reject(new Error('参数错误'))

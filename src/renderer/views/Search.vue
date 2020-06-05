@@ -10,11 +10,15 @@
                 <i class="el-icon-arrow-down"></i>
             </div>
             <input v-model="searchInfo" @input="startSearch"></input>
-            <div class="search-res-info">{{result.length}} matches in {{resultFileCount}} files</div>
+            <div class="search-res-info">{{result.length}}{{hasMore ? '+' : ''}} matches in {{resultFileCount}}{{hasMore ? '+' : ''}} files</div>
             <i class="close-btn el-icon-error" @click="clearSearchInfo"></i>
         </div>
 
-        <div class="search-ope">{{nowFile}}</div>
+        <div class="search-ope">
+            <div class="search-ope-btn" @click="openFindInPage">
+                <i class="el-icon-setting"></i>
+            </div>
+        </div>
 
         <div class="search-result">
             <template v-for="(item, index) in result" :index="index.toString()">
@@ -47,6 +51,8 @@
   import MainTabs from '../components/MainTabs/MainTabs'
   import fileService from '@/service/FileService'
 
+  import { remote } from 'electron'
+
   export default {
     name: 'Search',
     components: {
@@ -61,7 +67,8 @@
         // workspace: '/Users/yangqi/work/myproject/electron-all-projects/writeee/src',
         result: [],
         resultFileCount: 0,
-        nowFile: ''
+        limit: 100,
+        hasMore: false
       }
     },
     watch: {
@@ -73,6 +80,9 @@
       console.log('Search created')
     },
     methods: {
+      openFindInPage () {
+        console.log('findInPage', remote.getCurrentWindow().webContents.findInPage(this.searchInfo))
+      },
       clickResult (item) {
         this.activeOne(item)
         this.activeFile = item
@@ -85,6 +95,8 @@
       },
       startSearch () {
         console.log('stop old search')
+        this.activeFile = {}
+        this.hasMore = false
         this.result = []
         this.resultFileCount = 0
         console.log('start new search')
@@ -99,30 +111,69 @@
             return
           }
           ret.forEach(it => {
+            if (this.result.length >= this.limit) {
+              this.hasMore = true
+              return
+            }
             if (it.fileType === fileService.fileTypeEnum.NORMAL) {
-              fileService.readFile(it.path).then(data => {
-                if (this.searchInfo !== searchInfo) {
-                  console.log('搜索内容改变，结束之前的搜索')
-                  return
-                }
-                let regex = new RegExp(searchInfo, 'g')
-                let r = regex.exec(data)
-                if (r) {
-                  this.resultFileCount += 1
-                  while (r) {
-                    let ctx = data.substr(r.index - 10, 100)
-                    ctx = ctx.replace(r[0], '$searchInfo$')
-                    ctx = this.encodeHtml(ctx)
-                    ctx = ctx.replace('$searchInfo$', '<span style="background-color: goldenrod;">' + this.encodeHtml(r[0]) + '</span>')
-                    let obj = JSON.parse(JSON.stringify(it))
-                    obj.ctx = ctx
-                    obj.sPos = r.index
-                    obj.ePos = r.index + r[0].length
-                    this.result.push(obj)
-                    r = regex.exec(data)
+              // ==========同步方法==========
+              let data = fileService.readFileSync(it.path)
+              if (this.searchInfo !== searchInfo) {
+                console.log('搜索内容改变，结束之前的搜索')
+                return
+              }
+              let regex = new RegExp(searchInfo, 'g')
+              let r = regex.exec(data)
+              if (r) {
+                this.resultFileCount += 1
+                while (r) {
+                  if (this.result.length >= this.limit) {
+                    this.hasMore = true
+                    return
                   }
+                  let ctx = data.substr((r.index - 10) < 0 ? 0 : r.index - 10, 100)
+                  ctx = ctx.replace(r[0], '$searchInfo$')
+                  ctx = this.encodeHtml(ctx)
+                  ctx = ctx.replace('$searchInfo$', '<span style="background-color: goldenrod;">' + this.encodeHtml(r[0]) + '</span>')
+                  let obj = JSON.parse(JSON.stringify(it))
+                  obj.ctx = ctx
+                  obj.sPos = r.index
+                  obj.ePos = r.index + r[0].length
+                  this.result.push(obj)
+                  r = regex.exec(data)
                 }
-              })
+              }
+              // ==========同步方法==========
+
+              // ==========异步方法==========
+              // fileService.readFile(it.path).then(data => {
+              //   if (this.searchInfo !== searchInfo) {
+              //     console.log('搜索内容改变，结束之前的搜索')
+              //     return
+              //   }
+              //   let regex = new RegExp(searchInfo, 'g')
+              //   let r = regex.exec(data)
+              //   if (r) {
+              //     this.resultFileCount += 1
+              //     while (r) {
+              //       if (this.result.length >= this.limit) {
+              //         this.hasMore = true
+              //         return
+              //       }
+              //       let ctx = data.substr(r.index - 10, 100)
+              //       ctx = ctx.replace(r[0], '$searchInfo$')
+              //       ctx = this.encodeHtml(ctx)
+              //       ctx = ctx.replace('$searchInfo$', '<span style="background-color: goldenrod;">' + this.encodeHtml(r[0]) + '</span>')
+              //       let obj = JSON.parse(JSON.stringify(it))
+              //       obj.ctx = ctx
+              //       obj.sPos = r.index
+              //       obj.ePos = r.index + r[0].length
+              //       this.result.push(obj)
+              //       r = regex.exec(data)
+              //     }
+              //   }
+              // })
+              // ==========异步方法==========
             } else if (it.fileType === fileService.fileTypeEnum.DIR) {
               this.search(searchInfo, it.path)
             }
@@ -202,15 +253,20 @@
 
         .search-ope{
             width: 90%;
-            margin-top: 10px;
             display: flex;
             align-items: center;
-            padding: 0 10px;
+            padding: 10px;
+            .search-ope-btn{
+                padding: 5px;
+                border-radius: 5px;
+            }
+            .search-ope-btn:hover{
+                background-color: #ddd;
+            }
         }
 
         .search-result{
             width: 100%;
-            /*padding: 5px;*/
             height: 230px;
             background-color: white;
             overflow-y: scroll;
@@ -239,8 +295,7 @@
         }
 
         .search-content{
-            width: calc(100% - 10px);
-            padding: 5px;
+            width: 100%;
             flex: 1;
             background-color: white;
             overflow-y: scroll;
