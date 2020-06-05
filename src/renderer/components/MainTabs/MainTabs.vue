@@ -1,18 +1,21 @@
 <template>
     <div class="main-box">
-        <div class="title-box">
+
+        <div v-show="!searchMode" class="title-box">
             <input class="title-ipt"
-                   v-model="item.title" @blur="renameFile"></input>
+                   v-model="item.title" @blur="renameFile" @change="docModified"></input>
         </div>
+
         <div class="content-box">
-            <textarea v-show="showEdit" class="content-ipt" v-model="content" @keyup.enter="onEnter"
-                      @keydown.tab="onTab" @blur="saveContent"></textarea>
+            <textarea ref="ta" v-show="showEdit" class="content-ipt" v-model="content" @keyup.enter="onEnter"
+                      @keydown.tab="onTab" @blur="saveContent" @change="docModified"></textarea>
             <div v-show="!showEdit" class="content-message">
                 <i v-show="item.loading" class="el-icon-loading"></i>
                 <span>{{message}}</span>
             </div>
         </div>
-        <div class="info-box">
+
+        <div v-show="!searchMode" class="info-box">
             <div class="info-box-l">
                 <span>{{content ? content.length : 0}}/3000</span>
             </div>
@@ -20,9 +23,11 @@
                 <span>{{$moment(item.createTime).format('YYYY-MM-DD HH:mm:ss') || ''}}</span>
             </div>
             <div class="info-box-r">
+                <el-button size="mini" @click="setCursorPos(10)">setCursorPos</el-button>
                 <el-button size="mini" @click="saveContent">save</el-button>
             </div>
         </div>
+
     </div>
 </template>
 
@@ -42,6 +47,10 @@
       item: {
         type: Object,
         default: {}
+      },
+      searchMode: {
+        type: Boolean,
+        default: false
       }
     },
     data () {
@@ -50,12 +59,14 @@
         content: '',
         // contentLength: 0
         showEdit: false,
-        message: ''
+        message: '',
+        modified: false
       }
     },
     watch: {
-      item (v) {
-        console.log('item', v)
+      item (v, ov) {
+        console.log('item', v, ov)
+        if (v.path === ov.path && v.ePos === ov.ePos) return
         this.showEdit = false
         this.content = ''
         this.message = ''
@@ -69,7 +80,21 @@
       }
     },
     methods: {
+      docModified () {
+        this.modified = true
+      },
+      // 定位光标到某个位置
+      setCursorPos (sPos, ePos) {
+        var obj = this.$refs.ta
+        sPos = sPos || 0
+        ePos = ePos || obj.value.length
+        console.log('setCursorPos', sPos, ePos)
+        obj.setSelectionRange(sPos, ePos)
+        obj.focus()
+      },
       renameFile () {
+        if (!this.modified) return
+        this.modified = false
         this.$set(this.item, 'loading', true)
         fileService.renameFile(this.item).then(_ => {
           this.$set(this.item, 'loading', false)
@@ -83,10 +108,15 @@
           this.content = ret
           this.showEdit = true
           this.$set(this.item, 'loading', false)
+          if (weeFile.sPos) {
+            this.setCursorPos(weeFile.sPos, weeFile.ePos)
+          }
         })
         console.log('结束读')
       },
       saveContent () {
+        if (!this.modified) return
+        this.modified = false
         console.log(this.item)
         this.$set(this.item, 'loading', true)
         fileService.saveFile(this.item, this.content).then(_ => {
@@ -137,7 +167,8 @@
         }
         .content-box {
             width: 100%;
-            height: calc(100% - 100px);
+            /*height: calc(100% - 100px);*/
+            flex: 1;
             background-color: #eee;
             .content-ipt {
                 width: calc(100% - 120px);

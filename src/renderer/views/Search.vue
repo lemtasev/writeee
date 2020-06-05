@@ -14,11 +14,12 @@
             <i class="close-btn el-icon-error" @click="clearSearchInfo"></i>
         </div>
 
-        <div class="search-ope"></div>
+        <div class="search-ope">{{nowFile}}</div>
 
         <div class="search-result">
             <template v-for="(item, index) in result" :index="index.toString()">
-                <div class="result">
+                <div class="result" :class="{'active' : item.active}"
+                     @click="clickResult(item)">
                     <span class="ctx-span" v-html="item.ctx">{{item.ctx}}</span>
                     <span class="title-span">{{item.title}}</span>
                 </div>
@@ -31,25 +32,36 @@
 
         <div class="search-ope"></div>
 
+        <div class="search-content">
+            <MainTabs ref="MainTabs" :item="activeFile" :home="home" :searchMode="true"></MainTabs>
+        </div>
+
+        <div class="search-ope"></div>
+
     </div>
 
 </template>
 
 <script>
   // import {BrowserWindow} from 'electron'
-  // import MainTabs from '../components/MainTabs/MainTabs'
+  import MainTabs from '../components/MainTabs/MainTabs'
   import fileService from '@/service/FileService'
 
   export default {
     name: 'Search',
-    components: {},
+    components: {
+      MainTabs
+    },
     data () {
       return {
+        home: this,
+        activeFile: {},
         searchInfo: '',
-        // workspace: '/Users/yangqi/work/myproject/electron-all-projects/workspace',
-        workspace: '/Users/yangqi/work/myproject/electron-all-projects/writeee/src',
+        workspace: '/Users/yangqi/work/myproject/electron-all-projects/workspace',
+        // workspace: '/Users/yangqi/work/myproject/electron-all-projects/writeee/src',
         result: [],
-        resultFileCount: 0
+        resultFileCount: 0,
+        nowFile: ''
       }
     },
     watch: {
@@ -61,11 +73,21 @@
       console.log('Search created')
     },
     methods: {
+      clickResult (item) {
+        this.activeOne(item)
+        this.activeFile = item
+      },
+      activeOne (item) {
+        this.result.forEach(it => {
+          it['active'] = false
+        })
+        item['active'] = true
+      },
       startSearch () {
         console.log('stop old search')
-        console.log('start new search')
         this.result = []
         this.resultFileCount = 0
+        console.log('start new search')
         let searchInfo = this.searchInfo
         if (!searchInfo) return
         this.search(searchInfo, this.workspace)
@@ -94,6 +116,8 @@
                     ctx = ctx.replace('$searchInfo$', '<span style="background-color: goldenrod;">' + this.encodeHtml(r[0]) + '</span>')
                     let obj = JSON.parse(JSON.stringify(it))
                     obj.ctx = ctx
+                    obj.sPos = r.index
+                    obj.ePos = r.index + r[0].length
                     this.result.push(obj)
                     r = regex.exec(data)
                   }
@@ -185,33 +209,41 @@
         }
 
         .search-result{
-            width: calc(100% - 10px);
-            padding: 5px;
+            width: 100%;
+            /*padding: 5px;*/
             height: 230px;
             background-color: white;
             overflow-y: scroll;
             .result{
-                width: 100%;
+                width: calc(100% - 10px);
+                height: 25px;
+                padding: 0 5px;
                 display: flex;
-                position: relative;
+                align-items: center;
+                justify-content: space-between;
                 .ctx-span{
-                    max-width: 80%;
-                    height: 25px;
+                    flex: 1;
                     white-space: nowrap;
                     overflow: hidden;
                 }
                 .title-span{
-                    max-width: 80%;
-                    height: 25px;
                     white-space: nowrap;
                     overflow: hidden;
-                    position: absolute;
-                    right: 0;
-                    top: 0;
-                    background-color: white;
                     padding-left: 10px;
                 }
             }
+            .result.active{
+                background-color: #194cd1;
+                color: white;
+            }
+        }
+
+        .search-content{
+            width: calc(100% - 10px);
+            padding: 5px;
+            flex: 1;
+            background-color: white;
+            overflow-y: scroll;
         }
     }
 
