@@ -3,11 +3,10 @@
 
         <el-header height="60px" style="padding: 0;">
             <div class="head-box">
-                <span style="margin: 0 10px;">This version use NodeJs FS!</span>
-                <el-input v-model="workspace" placeholder="当前工作空间" style="width: 200px;"></el-input>
+                <span style="margin: 0 10px;">{{workspace}}</span>
 
-                <el-input v-model="settingKey" placeholder="settingKey"></el-input>
-                <el-input v-model="settingValue" placeholder="settingValue"></el-input>
+                <el-input v-model="settingKey" placeholder="settingKey" style="width: 100px;"></el-input>
+                <el-input v-model="settingValue" placeholder="settingValue" style="width: 100px;"></el-input>
                 <el-button @click="saveSetting">save</el-button>
                 <el-button @click="findSetting">find</el-button>
             </div>
@@ -18,27 +17,20 @@
             <el-aside class="resize-x" :width="asideWidthA + 'px'">
                 <div class="left-menu">
 
-                    <!--<div class="menu-top">-->
-                    <!--<el-dropdown>-->
-                    <!--<el-button type="text" icon="el-icon-circle-plus-outline">-->
-                    <!--新建<i class="el-icon-caret-bottom"></i>-->
-                    <!--</el-button>-->
-                    <!--<el-dropdown-menu slot="dropdown">-->
-                    <!--<el-dropdown-item>章节</el-dropdown-item>-->
-                    <!--<el-dropdown-item>文件夹</el-dropdown-item>-->
-                    <!--</el-dropdown-menu>-->
-                    <!--</el-dropdown>-->
-                    <!--</div>-->
-
                     <div class="menu-content">
 
-                        <div class="menu-inline-block">
+                        <div v-if="workspace" class="menu-inline-block">
 
-                            <div class="block-title border-top-none">正文</div>
+                            <div class="block-title border-top-none">工作空间</div>
                             <template v-for="(item, index) in files" :index="index.toString()">
                                 <TreeMenu :item="item" :index="index" :home="home"></TreeMenu>
                             </template>
 
+                        </div>
+
+                        <div v-else class="no-workspace">
+                            <div>没有选择工作空间</div>
+                            <button>打开</button>
                         </div>
 
                     </div>
@@ -105,21 +97,46 @@
     created () {
       console.log('Home created')
       this.workspace = remote.getGlobal('sharedObject').workspace
-      this.initHome()
+      this.initHome(this.workspace)
     },
     methods: {
-      initHome () {
-        if (this.workspace) {
-          // 读目录
-          this.findFiles(this.workspace)
-          // 记录历史
-          this.openHistory(this.workspace)
+      async initHome (workspace) {
+        if (!workspace) {
+          // 选择最后打开的目录
+          let ret = await systemService.findOpenHistory()
+          let li = []
+          if (ret && ret.length > 0) {
+            li = ret[0].value
+          }
+          if (li && li.length > 0) {
+            workspace = li[li.length - 1]
+            this.workspace = workspace
+          }
         }
+        if (!workspace) {
+          return
+        }
+        // 读目录
+        this.findFiles(workspace)
+        // 记录历史
+        this.saveOpenHistory(workspace)
       },
-      openHistory (path) {
-        let key = 'openHistory'
-        systemService.findUserSetting(key).then(ret => {
-          console.log('==========findUserSetting==========', ret)
+      deleteOpenHistory (path) {
+        systemService.findOpenHistory().then(ret => {
+          let li = []
+          if (ret && ret.length > 0) {
+            li = ret[0].value
+          }
+          if (li.includes(path)) {
+            li.splice(li.indexOf(path), 1)
+          }
+          return systemService.saveOpenHistory(li)
+        }).then(ret => {
+          console.log('==========saveUserSetting==========', ret)
+        })
+      },
+      saveOpenHistory (path) {
+        systemService.findOpenHistory().then(ret => {
           let li = []
           if (ret && ret.length > 0) {
             li = ret[0].value
@@ -131,7 +148,7 @@
             li.splice(0, 1)
           }
           li.push(path)
-          return systemService.saveUserSetting(key, li)
+          return systemService.saveOpenHistory(li)
         }).then(ret => {
           console.log('==========saveUserSetting==========', ret)
         })
@@ -320,6 +337,10 @@
                     font-size: @fontSizeMicro;
                     color: @wxColorGray;
                 }
+            }
+            .no-workspace {
+                width: 100%;
+                height: 100%;
             }
         }
         .menu-bottom {
