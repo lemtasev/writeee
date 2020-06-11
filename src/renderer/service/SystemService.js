@@ -17,15 +17,6 @@ export default {
         dataType: dataTypeEnum.USER_SETTING
       }
       if (key) condition.key = key
-      // db.findOne(
-      //   condition,
-      //   (err, ret) => {
-      //     if (err) {
-      //       console.error('err', err)
-      //       reject(err)
-      //     }
-      //     resolve(ret)
-      //   })
       db.find(condition).exec((err, ret) => {
         if (err) {
           console.error('err', err)

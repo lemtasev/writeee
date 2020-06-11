@@ -5,10 +5,6 @@
             <div class="head-box">
                 <span style="margin: 0 10px;">This version use NodeJs FS!</span>
                 <el-input v-model="workspace" placeholder="当前工作空间" style="width: 200px;"></el-input>
-                <el-button type="primary" icon="el-icon-circle-plus-outline" round
-                           @click="openBookListDrawer">Book List
-                </el-button>
-                <BookList ref="bookListRef" :home="home"></BookList>
 
                 <el-input v-model="settingKey" placeholder="settingKey"></el-input>
                 <el-input v-model="settingValue" placeholder="settingValue"></el-input>
@@ -22,23 +18,21 @@
             <el-aside class="resize-x" :width="asideWidthA + 'px'">
                 <div class="left-menu">
 
-                    <div class="menu-top">
-                        <!--<el-dropdown>-->
-                            <!--<el-button type="text" icon="el-icon-circle-plus-outline">-->
-                                <!--新建<i class="el-icon-caret-bottom"></i>-->
-                            <!--</el-button>-->
-                            <!--<el-dropdown-menu slot="dropdown">-->
-                                <!--<el-dropdown-item>章节</el-dropdown-item>-->
-                                <!--<el-dropdown-item>文件夹</el-dropdown-item>-->
-                            <!--</el-dropdown-menu>-->
-                        <!--</el-dropdown>-->
-                    </div>
+                    <!--<div class="menu-top">-->
+                    <!--<el-dropdown>-->
+                    <!--<el-button type="text" icon="el-icon-circle-plus-outline">-->
+                    <!--新建<i class="el-icon-caret-bottom"></i>-->
+                    <!--</el-button>-->
+                    <!--<el-dropdown-menu slot="dropdown">-->
+                    <!--<el-dropdown-item>章节</el-dropdown-item>-->
+                    <!--<el-dropdown-item>文件夹</el-dropdown-item>-->
+                    <!--</el-dropdown-menu>-->
+                    <!--</el-dropdown>-->
+                    <!--</div>-->
 
                     <div class="menu-content">
 
                         <div class="menu-inline-block">
-
-                            <!--<TreeMenu :item="searchResMenu" :home="home"></TreeMenu>-->
 
                             <div class="block-title border-top-none">正文</div>
                             <template v-for="(item, index) in files" :index="index.toString()">
@@ -56,12 +50,13 @@
                     </div>
 
                 </div>
-                <div class="resize-line" @mousedown="resizeA($event)" @dblclick="dblclickA"></div>
+                <div class="resize-line" @mousedown="resize($event)" @dblclick="dblclick"></div>
             </el-aside>
 
             <!--工作区-->
             <el-main style="padding: 0;">
-                <MainTabs ref="MainTabs" :item="activeFile" :home="home"></MainTabs>
+                <MainTabs ref="MainTabs" :home="home" :activeFileList="activeFileList"
+                          :activeFile="activeFile"></MainTabs>
             </el-main>
 
         </el-container>
@@ -71,7 +66,7 @@
 </template>
 
 <script>
-  // import {BrowserWindow} from 'electron'
+  import {remote} from 'electron'
   import MainTabs from '../components/MainTabs/MainTabs'
   import TreeMenu from '@/components/TreeMenu/TreeMenu'
   // import bookService from '@/service/BookService'
@@ -91,18 +86,12 @@
         home: this,
         asideWidthA: 200,
 
-        // bookInfo: {_id: 'kFsZeKViBAlf6NXE', name: 'loading...'},
-        // activeDirectory: {},
-        // activeContent: {},
-        searchResMenu: fileService.sysSearchResMenu,
-        // bookDirectory: [],
-        // sourceMenu: fileService.sysSourceMenu,
-        // directoryContent: [],
-
-        workspace: '/Users/yangqi/work/myproject/electron-all-projects/workspace',
-        // workspace: '/Users/yangqi',
+        // workspace: '/Users/yangqi/work/myproject/electron-all-projects/workspace',
+        workspace: '',
         files: [],
         activeFile: {},
+        activeFileListIndex: 0,
+        activeFileList: [],
 
         settingKey: '',
         settingValue: ''
@@ -115,9 +104,116 @@
     },
     created () {
       console.log('Home created')
-      this.findFiles(this.workspace)
+      this.workspace = remote.getGlobal('sharedObject').workspace
+      this.initHome()
     },
     methods: {
+      initHome () {
+        if (this.workspace) {
+          // 读目录
+          this.findFiles(this.workspace)
+          // 记录历史
+          this.openHistory(this.workspace)
+        }
+      },
+      openHistory (path) {
+        let key = 'openHistory'
+        systemService.findUserSetting(key).then(ret => {
+          console.log('==========findUserSetting==========', ret)
+          let li = []
+          if (ret && ret.length > 0) {
+            li = ret[0].value
+          }
+          if (li.includes(path)) {
+            li.splice(li.indexOf(path), 1)
+          }
+          if (li.length >= 10) {
+            li.splice(0, 1)
+          }
+          li.push(path)
+          return systemService.saveUserSetting(key, li)
+        }).then(ret => {
+          console.log('==========saveUserSetting==========', ret)
+        })
+      },
+      docModified (wteeFile, modified) {
+        this.activeFileList.forEach((it, i) => {
+          if (it.path === wteeFile.path) {
+            it.modified = modified
+            this.$set(this.activeFileList, i, it)
+          }
+        })
+      },
+      closeFile (index) {
+        if (this.activeFileList[index].modified) {
+          let ret = remote.dialog.showMessageBox(remote.getCurrentWindow(), {
+            message: '是否要保存对 ' + this.activeFileList[index].title + ' 的更改?',
+            detail: '如果不保存，你的更改将丢失。',
+            type: 'warning',
+            buttons: ['保存', '取消', '不保存'],
+            defaultId: 0,
+            cancelId: 1
+          })
+          if (ret === 1) {
+            console.log('取消')
+            return
+          }
+          if (ret === 0) {
+            console.log('保存')
+            this.$refs.MainTabs.$refs.MonacoEditor.closeFileWithSave(this.activeFileList[index])
+          } else if (ret === 2) {
+            console.log('不保存')
+            this.$refs.MainTabs.$refs.MonacoEditor.closeFileWithoutSave(this.activeFileList[index])
+          }
+          this.removeActiveFileList(index)
+          return
+        }
+        this.removeActiveFileList(index)
+      },
+      removeActiveFileList (index) {
+        this.activeFileList.splice(index, 1)
+        let has = false
+        this.activeFileList.forEach((it, i) => {
+          if (it.active) {
+            has = true
+          }
+        })
+        if (has) return
+        if (this.activeFileList.length === 0) {
+          this.activeFile = {}
+          return
+        }
+        let it = this.activeFileList[this.activeFileList.length - 1]
+        it.active = true
+        this.$set(this.activeFileList, this.activeFileList.length - 1, it)
+        this.activeFile = it
+      },
+      clickFile (wteeFile) {
+        if (wteeFile.fileType === fileService.fileTypeEnum.DIR) return
+        this.activeFile = wteeFile
+        this.tryPushActiveFileList(wteeFile)
+      },
+      tryPushActiveFileList (wteeFile) {
+        let has = false
+        this.activeFileList.forEach((it, i) => {
+          if (it.path === wteeFile.path) {
+            has = true
+            it.active = true
+            this.$set(this.activeFileList, i, it)
+            this.activeFileListIndex = i
+          } else {
+            it.active = false
+            this.$set(this.activeFileList, i, it)
+          }
+        })
+        if (has) return
+        // if (this.activeFileList.length >= 2) {
+        //   this.activeFileList.splice(0, 1)
+        // }
+        wteeFile.active = true
+        this.activeFileList.push(wteeFile)
+        // this.activeFileListIndex = this.activeFileList.length - 1
+      },
       saveSetting () {
         systemService.saveUserSetting(this.settingKey, this.settingValue).then(ret => {
           console.log(ret)
@@ -133,7 +229,7 @@
           this.files = ret
         })
       },
-      resizeA (e) {
+      resize (e) {
         let ox = e.clientX
         let maxWidth = document.documentElement.clientWidth
         document.onmousemove = (e) => {
@@ -150,11 +246,8 @@
           document.onmouseup = null
         }
       },
-      dblclickA () {
+      dblclick () {
         this.asideWidthA = 200
-      },
-      openBookListDrawer () {
-        this.$refs.bookListRef.open()
       }
     }
   }
@@ -206,14 +299,14 @@
             align-items: center;
             justify-content: space-between;
             /*.active-directory-title {*/
-                /*overflow: hidden;*/
-                /*text-overflow: ellipsis;*/
-                /*white-space: nowrap;*/
+            /*overflow: hidden;*/
+            /*text-overflow: ellipsis;*/
+            /*white-space: nowrap;*/
             /*}*/
         }
         .menu-content {
             width: 100%;
-            height: calc(100% - 100px);
+            height: calc(100% - 30px);
             overflow: scroll;
             .menu-inline-block {
                 min-width: 100%;
@@ -272,27 +365,27 @@
     }
 
     /*.book-info {*/
-        /*display: flex;*/
-        /*align-items: center;*/
-        /*!*justify-content: center;*!*/
-        /*padding: 10px;*/
-        /*-webkit-user-select: text;*/
+    /*display: flex;*/
+    /*align-items: center;*/
+    /*!*justify-content: center;*!*/
+    /*padding: 10px;*/
+    /*-webkit-user-select: text;*/
     /*}*/
 
     /*.book-name {*/
-        /*display: flex;*/
-        /*align-items: center;*/
-        /*justify-content: center;*/
-        /*padding: 10px;*/
-        /*-webkit-user-select: text;*/
+    /*display: flex;*/
+    /*align-items: center;*/
+    /*justify-content: center;*/
+    /*padding: 10px;*/
+    /*-webkit-user-select: text;*/
     /*}*/
 
     /*.book-name::before {*/
-        /*content: '《';*/
+    /*content: '《';*/
     /*}*/
 
     /*.book-name::after {*/
-        /*content: '》';*/
+    /*content: '》';*/
     /*}*/
 
 </style>

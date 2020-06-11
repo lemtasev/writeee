@@ -25,7 +25,7 @@
 
 <script>
   // import redis from 'redis'
-  import Editor from '@/components/Editor/Editor'
+  import Editor from '@/components/MonacoEditor/MonacoEditor'
 
   export default {
     name: 'MainTabs',

@@ -1,7 +1,7 @@
 'use strict'
 
 // import { app, BrowserWindow, Menu, Tray, clipboard, nativeImage, MenuItem, ipcMain } from 'electron'
-import { app, BrowserWindow, Menu, dialog } from 'electron'
+import {app, BrowserWindow, Menu, dialog} from 'electron'
 import path from 'path'
 
 /**
@@ -16,6 +16,10 @@ let mainWindow
 const winURL = process.env.NODE_ENV === 'development'
   ? `http://localhost:9080`
   : `file://${__dirname}/index.html`
+
+global.sharedObject = {
+  workspace: ''
+}
 
 function createWindow () {
   /**
@@ -106,7 +110,7 @@ let systemMenuJson = [
   ...(isMac ? [{
     label: app.name,
     submenu: [
-      { role: 'about' },
+      {role: 'about'},
       {
         label: '检查更新……',
         // accelerator: 'CmdOrCtrl+R',
@@ -117,7 +121,7 @@ let systemMenuJson = [
           })
         }
       },
-      { type: 'separator' },
+      {type: 'separator'},
       {
         label: '偏好设置',
         // accelerator: 'CmdOrCtrl+R',
@@ -141,14 +145,14 @@ let systemMenuJson = [
           })
         }
       },
-      { type: 'separator' },
-      { role: 'services' },
-      { type: 'separator' },
-      { role: 'hide' },
-      { role: 'hideothers' },
-      { role: 'unhide' },
-      { type: 'separator' },
-      { role: 'quit' }
+      {type: 'separator'},
+      {role: 'services'},
+      {type: 'separator'},
+      {role: 'hide'},
+      {role: 'hideothers'},
+      {role: 'unhide'},
+      {type: 'separator'},
+      {role: 'quit'}
     ]
   }] : []),
   // { role: 'fileMenu' }
@@ -169,7 +173,7 @@ let systemMenuJson = [
           {
             label: '书'
           },
-          { type: 'separator' },
+          {type: 'separator'},
           {
             label: '人物'
           },
@@ -178,7 +182,19 @@ let systemMenuJson = [
           }
         ]
       },
-      isMac ? { role: 'close' } : { role: 'quit' }
+      {
+        label: '打开',
+        click: function () {
+          let ret = dialog.showOpenDialog(mainWindow, {
+            defaultPath: '~',
+            properties: ['openDirectory']
+          })
+          if (!ret) return
+          global.sharedObject.workspace = ret[0]
+          // mainWindow.loadURL(winURL + '/?workspace=' + ret[0])
+          mainWindow.reload()
+        }
+      }
     ]
   },
   // { role: 'editMenu' }
@@ -220,33 +236,33 @@ let systemMenuJson = [
           })
         }
       },
-      { type: 'separator' },
+      {type: 'separator'},
       {
         label: '撤销',
         accelerator: 'CmdOrCtrl+Z',
         role: 'undo'
       },
-      { role: 'redo' },
-      { type: 'separator' },
-      { role: 'cut' },
-      { role: 'copy' },
-      { role: 'paste' },
+      {role: 'redo'},
+      {type: 'separator'},
+      {role: 'cut'},
+      {role: 'copy'},
+      {role: 'paste'},
       ...(isMac ? [
-        { role: 'pasteAndMatchStyle' },
-        { role: 'delete' },
-        { role: 'selectAll' },
-        { type: 'separator' },
+        {role: 'pasteAndMatchStyle'},
+        {role: 'delete'},
+        {role: 'selectAll'},
+        {type: 'separator'},
         {
           label: 'Speech',
           submenu: [
-            { role: 'startspeaking' },
-            { role: 'stopspeaking' }
+            {role: 'startspeaking'},
+            {role: 'stopspeaking'}
           ]
         }
       ] : [
-        { role: 'delete' },
-        { type: 'separator' },
-        { role: 'selectAll' }
+        {role: 'delete'},
+        {type: 'separator'},
+        {role: 'selectAll'}
       ])
     ]
   },
@@ -254,30 +270,30 @@ let systemMenuJson = [
   {
     label: '视图',
     submenu: [
-      { role: 'reload' },
-      { role: 'forcereload' },
-      { role: 'toggledevtools' },
-      { type: 'separator' },
-      { role: 'resetzoom' },
-      { role: 'zoomin' },
-      { role: 'zoomout' },
-      { type: 'separator' },
-      { role: 'togglefullscreen' }
+      {role: 'reload'},
+      {role: 'forcereload'},
+      {role: 'toggledevtools'},
+      {type: 'separator'},
+      {role: 'resetzoom'},
+      {role: 'zoomin'},
+      {role: 'zoomout'},
+      {type: 'separator'},
+      {role: 'togglefullscreen'}
     ]
   },
   // { role: 'windowMenu' }
   {
     label: '窗口',
     submenu: [
-      { role: 'minimize' },
-      { role: 'zoom' },
+      {role: 'minimize'},
+      {role: 'zoom'},
       ...(isMac ? [
-        { type: 'separator' },
-        { role: 'front' },
-        { type: 'separator' },
-        { role: 'window' }
+        {type: 'separator'},
+        {role: 'front'},
+        {type: 'separator'},
+        {role: 'window'}
       ] : [
-        { role: 'close' }
+        {role: 'close'}
       ])
     ]
   },
@@ -287,7 +303,7 @@ let systemMenuJson = [
       {
         label: 'Learn More',
         click: async () => {
-          const { shell } = require('electron')
+          const {shell} = require('electron')
           await shell.openExternal('https://electronjs.org')
         }
       }

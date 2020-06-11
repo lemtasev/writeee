@@ -35,7 +35,7 @@
             <template v-for="(it, i) in item.children" :index="i.toString()">
                 <TreeMenu :item="it" :index="i" :level="level + 1" :home="home"></TreeMenu>
             </template>
-            <div v-show="!item.children" style="width: 100%;text-align: center;">
+            <div v-show="!item.children" style="width: 100%;">
                 <i class="el-icon-loading"></i>
             </div>
         </div>
@@ -73,16 +73,6 @@
     data () {
       return {
         contextMenu: {
-          sysSearchResMenuContextMenu: {}, // 搜索结果上下文菜单
-          sysOutlineMenuContextMenu: {}, // 大纲上下文菜单
-          sysPlaceMenuContextMenu: {}, // 地点上下文菜单
-          sysCharacterMenuContextMenu: {}, // 人物上下文菜单
-          sysSectMenuContextMenu: {}, // 门派上下文菜单
-          sysPropsMenuContextMenu: {}, // 道具上下文菜单
-          sysMonsterMenuContextMenu: {}, // 妖怪上下文菜单
-          sysSkillMenuContextMenu: {}, // 招式上下文菜单
-          sysReferenceMenuContextMenu: {}, // 引用上下文菜单
-
           userFolderContextMenu: {}, // 用户文件夹上下文菜单
           userFileContextMenu: {} // 用户文件上下文菜单
         },
@@ -113,10 +103,8 @@
         }
       },
       clickFile () {
-        this.home.activeFile = this.item
-      },
-      refreshDirectoryContent () {
-        this.home.findDirectoryContent()
+        // this.home.activeFile = this.item
+        this.home.clickFile(this.item)
       },
       dbclickFile () {
         if (this.item.hasChild) this.openOrClose()
@@ -294,7 +282,6 @@
                   fileService.createFile(this.item.bookId, this.item._id, '测试', '测试内容').then(
                     ret => {
                       console.log('fileService.createFile ret', ret)
-                      this.refreshDirectoryContent()
                     }
                   )
                 }
@@ -306,7 +293,6 @@
                   fileService.createDirectory(this.item.bookId, this.item._id, '测试文件夹').then(
                     ret => {
                       console.log('fileService.createDirectory ret', ret)
-                      this.refreshDirectoryContent()
                       this.$set(this.item, 'hasChild', true)
                       // this.item.hasChild = true
                       // this.$forceUpdate()

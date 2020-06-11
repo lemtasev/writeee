@@ -32,12 +32,12 @@
 </template>
 
 <script>
-  // import Editor from '@/components/Editor/Editor'
+  // import MonacoEditor from '@/components/MonacoEditor/MonacoEditor'
   import fileService from '@/service/FileService'
 
   export default {
     name: 'MainTabs',
-    // components: {Editor},
+    // components: {MonacoEditor},
     props: {
       home: {
         type: Object,
