@@ -14,22 +14,24 @@ const sortModeEnum = {
 }
 let sortMode = sortModeEnum.TITLE
 
-// 菜单类型枚举：系统菜单、用户菜单
-const menuTypeEnum = {
-  SYSTEM: 'system',
-  USER: 'user'
-}
-
 // 文件类型枚举
 const fileTypeEnum = {
-  DIR: 'directory',
-  NORMAL: 'normal',
-  IMG: 'image',
-  UNKNOWN: 'unknown'
+  DIR: 'directory', // 目录
+  CHAPTER: 'chapter', // 章节
+  IMG: 'image', // 图片
+  CHARACTER: 'character', // 人物
+  SECT: 'sect', // 门派
+  SKILL: 'skill', // 技能
+  PLACE: 'place', // 地点
+  PROP: 'prop', // 道具
+  MONSTER: 'monster', // 妖怪
+  OUTLINE: 'outline', // 大纲
+  REFERENCE: 'reference', // 引用
+  UNKNOWN: 'unknown' // 未知
 }
 
 // 系统搜索结果菜单
-const sysSearchResMenu = {_id: '搜索结果', title: '搜索结果', type: menuTypeEnum.SYSTEM, isFolder: false, isActive: false}
+// const sysSearchResMenu = {_id: '搜索结果', title: '搜索结果', type: menuTypeEnum.SYSTEM, isFolder: false, isActive: false}
 
 // 系统素材菜单
 // const sysSourceMenu = [
@@ -60,10 +62,10 @@ const sysSearchResMenu = {_id: '搜索结果', title: '搜索结果', type: menu
 
 export default {
 
-  menuTypeEnum: menuTypeEnum,
+  // menuTypeEnum: menuTypeEnum,
   fileTypeEnum: fileTypeEnum,
 
-  sysSearchResMenu: sysSearchResMenu,
+  // sysSearchResMenu: sysSearchResMenu,
   // sysSourceMenu: sysSourceMenu,
 
   table: table,
@@ -72,7 +74,6 @@ export default {
   findFiles: (path) => {
     return new Promise((resolve, reject) => {
       if (!path) reject(new Error('参数错误'))
-      console.log('查看', path, '目录')
       let t1 = new Date().getTime()
       fs.readdir(path, function (err, files) {
         let t2 = new Date().getTime()
@@ -81,18 +82,22 @@ export default {
           reject(err)
         }
         let ret = []
-        files.forEach(file => {
-          if (file.charAt(0) === '.') {
+        files.forEach(fileName => {
+          if (fileName.charAt(0) === '.') {
+            // 过滤隐藏文件
             return
           }
-          // console.log(file)
+          let lastIndexOfPoint = fileName.lastIndexOf('.')
+          let title = lastIndexOfPoint < 0 ? fileName : fileName.substring(0, lastIndexOfPoint)
+          let suffix = lastIndexOfPoint < 0 ? '' : fileName.substring(lastIndexOfPoint + 1)
           let wteeFile = {
-            title: file,
-            path: path + '/' + file,
-            type: menuTypeEnum.USER
+            title: title,
+            fileName: fileName,
+            suffix: suffix,
+            path: path + '/' + fileName
           }
           let stats = fs.statSync(wteeFile.path)
-          wteeFile.fileType = stats.isDirectory() ? fileTypeEnum.DIR : fileTypeEnum.NORMAL
+          wteeFile.fileType = stats.isDirectory() ? fileTypeEnum.DIR : getFileType(suffix)
           wteeFile.createTime = stats.birthtimeMs // 创建时间
           wteeFile.updateTime = stats.mtimeMs // 上次修改此文件的时间
           wteeFile.latestAccessedTime = stats.atimeMs // 上次访问此文件的时间戳
@@ -101,6 +106,7 @@ export default {
           if (wteeFile.fileType === fileTypeEnum.DIR) wteeFile.hasChild = hasChild(wteeFile)
           ret.push(wteeFile)
         })
+        // 排序
         switch (sortMode) {
           case sortModeEnum.TITLE:
             console.log('排序：标题')
@@ -139,9 +145,7 @@ export default {
             })
             break
         }
-        let t3 = new Date().getTime()
-        console.log('异步readdir耗时：', (t2 - t1))
-        console.log('同步遍历耗时：', (t3 - t2))
+        console.log('异步read【' + path + '】耗时：', (t2 - t1))
         resolve(ret)
       })
     })
@@ -200,6 +204,20 @@ export default {
       })
     })
   }
+}
+
+function getFileType (suffix) {
+  return suffix === fileTypeEnum.CHAPTER ? fileTypeEnum.CHAPTER
+    : suffix === fileTypeEnum.IMG ? fileTypeEnum.IMG
+      : suffix === fileTypeEnum.CHARACTER ? fileTypeEnum.CHARACTER
+        : suffix === fileTypeEnum.SECT ? fileTypeEnum.SECT
+          : suffix === fileTypeEnum.SKILL ? fileTypeEnum.SKILL
+            : suffix === fileTypeEnum.PLACE ? fileTypeEnum.PLACE
+              : suffix === fileTypeEnum.PROP ? fileTypeEnum.PROP
+                : suffix === fileTypeEnum.MONSTER ? fileTypeEnum.MONSTER
+                  : suffix === fileTypeEnum.OUTLINE ? fileTypeEnum.OUTLINE
+                    : suffix === fileTypeEnum.REFERENCE ? fileTypeEnum.REFERENCE
+                      : fileTypeEnum.UNKNOWN
 }
 
 function hasChild (file) {

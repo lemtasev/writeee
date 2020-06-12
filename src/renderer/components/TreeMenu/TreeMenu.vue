@@ -12,9 +12,19 @@
                @click="openOrClose"></i>
 
             <!--图标-->
-            <i v-if="item.fileType == 'directory'" class="menu-icon"
+            <i v-if="item.fileType == fileTypeEnum.DIR" class="menu-icon"
                :class="{'el-icon-folder-opened' : item.isOpen, 'el-icon-folder' : !item.isOpen}"></i>
-            <i v-else-if="item.fileType == 'normal'" class="menu-icon el-icon-document"></i>
+            <i v-else-if="item.fileType == fileTypeEnum.CHAPTER" class="menu-icon el-icon-document"></i>
+            <i v-else-if="item.fileType == fileTypeEnum.IMG" class="menu-icon el-icon-picture"></i>
+            <i v-else-if="item.fileType == fileTypeEnum.CHARACTER" class="menu-icon el-icon-user-solid"></i>
+            <i v-else-if="item.fileType == fileTypeEnum.SECT" class="menu-icon el-icon-house"></i>
+            <i v-else-if="item.fileType == fileTypeEnum.SKILL" class="menu-icon el-icon-moon"></i>
+            <i v-else-if="item.fileType == fileTypeEnum.PLACE" class="menu-icon el-icon-location"></i>
+            <i v-else-if="item.fileType == fileTypeEnum.PROP" class="menu-icon el-icon-takeaway-box"></i>
+            <i v-else-if="item.fileType == fileTypeEnum.MONSTER" class="menu-icon el-icon-warning"></i>
+            <i v-else-if="item.fileType == fileTypeEnum.OUTLINE" class="menu-icon el-icon-tickets"></i>
+            <i v-else-if="item.fileType == fileTypeEnum.REFERENCE" class="menu-icon el-icon-paperclip"></i>
+            <i v-else-if="item.fileType == fileTypeEnum.UNKNOWN" class="menu-icon el-icon-question"></i>
 
             <!--名称-->
             <div v-if="renameStatus" class="menu-title">
@@ -77,11 +87,14 @@
           userFileContextMenu: {} // 用户文件上下文菜单
         },
         renameStatus: false, // 重命名状态
-        newTitle: ''
+        newTitle: '',
+
+        fileTypeEnum: {}
       }
     },
     created () {
       this.initContextMenu()
+      this.fileTypeEnum = fileService.fileTypeEnum
     },
     methods: {
       doNothing () {},
@@ -103,7 +116,6 @@
         }
       },
       clickFile () {
-        // this.home.activeFile = this.item
         this.home.clickFile(this.item)
       },
       dbclickFile () {
@@ -112,14 +124,10 @@
       },
       openOrClose () {
         this.$set(this.item, 'isOpen', !this.item.isOpen)
-        // this.item.isOpen = !this.item.isOpen
-        // this.$forceUpdate()
         if (!this.item.children || this.item.children.length < 1) {
           fileService.findFiles(this.item.path).then(
             ret => {
               this.$set(this.item, 'children', ret)
-              // this.item.children = ret
-              // this.$forceUpdate()
             }
           )
         }
@@ -129,51 +137,10 @@
         console.log('contextmenuHandler', e)
         e.preventDefault()
         this.clickFile()
-        if (this.item.type === fileService.menuTypeEnum.SYSTEM) {
-          switch (this.item._id) {
-            case '搜索结果':
-              console.log('todo: 【' + this.item._id + '】上下文菜单')
-              this.contextMenu.sysSearchResMenuContextMenu.popup({window: remote.getCurrentWindow()})
-              break
-            case '大纲':
-              console.log('todo: 【' + this.item._id + '】上下文菜单')
-              this.contextMenu.sysOutlineMenuContextMenu.popup({window: remote.getCurrentWindow()})
-              break
-            case '地点':
-              console.log('todo: 【' + this.item._id + '】上下文菜单')
-              this.contextMenu.sysPlaceMenuContextMenu.popup({window: remote.getCurrentWindow()})
-              break
-            case '人物':
-              console.log('todo: 【' + this.item._id + '】上下文菜单')
-              this.contextMenu.sysCharacterMenuContextMenu.popup({window: remote.getCurrentWindow()})
-              break
-            case '门派':
-              console.log('todo: 【' + this.item._id + '】上下文菜单')
-              this.contextMenu.sysSectMenuContextMenu.popup({window: remote.getCurrentWindow()})
-              break
-            case '道具':
-              console.log('todo: 【' + this.item._id + '】上下文菜单')
-              this.contextMenu.sysPropsMenuContextMenu.popup({window: remote.getCurrentWindow()})
-              break
-            case '妖怪':
-              console.log('todo: 【' + this.item._id + '】上下文菜单')
-              this.contextMenu.sysMonsterMenuContextMenu.popup({window: remote.getCurrentWindow()})
-              break
-            case '招式心法':
-              console.log('todo: 【' + this.item._id + '】上下文菜单')
-              this.contextMenu.sysSkillMenuContextMenu.popup({window: remote.getCurrentWindow()})
-              break
-            case '引用':
-              console.log('todo: 【' + this.item._id + '】上下文菜单')
-              this.contextMenu.sysReferenceMenuContextMenu.popup({window: remote.getCurrentWindow()})
-              break
-          }
-        } else if (this.item.type === fileService.menuTypeEnum.USER) {
-          if (this.item.fileType === fileService.fileTypeEnum.DIR) {
-            this.contextMenu.userFolderContextMenu.popup({window: remote.getCurrentWindow()})
-          } else if (this.item.fileType === fileService.fileTypeEnum.NORMAL) {
-            this.contextMenu.userFileContextMenu.popup({window: remote.getCurrentWindow()})
-          }
+        if (this.item.fileType === fileService.fileTypeEnum.DIR) {
+          this.contextMenu.userFolderContextMenu.popup({window: remote.getCurrentWindow()})
+        } else if (this.item.fileType === fileService.fileTypeEnum.CHAPTER) {
+          this.contextMenu.userFileContextMenu.popup({window: remote.getCurrentWindow()})
         }
       },
       initContextMenu () {

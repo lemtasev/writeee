@@ -27,17 +27,13 @@
                     <span class="ctx-span" v-html="item.ctx">{{item.ctx}}</span>
                     <span class="title-span">{{item.title}}</span>
                 </div>
-                <!--<div class="result">-->
-                    <!--<span class="ctx-span">{{item.ctx}}</span>-->
-                    <!--<span class="title-span">{{item.title}}</span>-->
-                <!--</div>-->
             </template>
         </div>
 
         <div class="search-ope"></div>
 
         <div class="search-content">
-            <MainTabs ref="MainTabs" :item="activeFile" :home="home" :searchMode="true"></MainTabs>
+            <MonacoEditor ref="MonacoEditor" :item="activeFile" :home="home" :searchMode="true"></MonacoEditor>
         </div>
 
         <div class="search-ope"></div>
@@ -48,26 +44,28 @@
 
 <script>
   // import {BrowserWindow} from 'electron'
-  import MainTabs from '../components/MainTabs/MainTabs'
+  import MonacoEditor from '../components/MonacoEditor/MonacoEditor'
   import fileService from '@/service/FileService'
+  import * as monaco from 'monaco-editor'
 
   import { remote } from 'electron'
 
   export default {
     name: 'Search',
     components: {
-      MainTabs
+      MonacoEditor
     },
     data () {
       return {
         home: this,
         activeFile: {},
         searchInfo: '',
-        workspace: '/Users/yangqi/work/myproject/electron-all-projects/workspace',
+        workspace: '',
+        // workspace: '/Users/yangqi/work/myproject/electron-all-projects/workspace',
         // workspace: '/Users/yangqi/work/myproject/electron-all-projects/writeee/src',
         result: [],
-        resultFileCount: 0,
-        limit: 100,
+        resultFileCount: 0, // 文件个数
+        limit: 100, // 搜索结果最多显示个数
         hasMore: false
       }
     },
@@ -78,6 +76,7 @@
     },
     created () {
       console.log('Search created')
+      this.workspace = remote.getGlobal('sharedObject').workspace
     },
     methods: {
       openFindInPage () {
@@ -115,69 +114,112 @@
               this.hasMore = true
               return
             }
-            if (it.fileType === fileService.fileTypeEnum.NORMAL) {
+            if (it.fileType === fileService.fileTypeEnum.DIR) {
+              this.search(searchInfo, it.path)
+            } else {
+              // ==========monnaco model matches==========
+              // this.findMatchesByMonaco(it, searchInfo)
+              // ==========monnaco model matches==========
+
               // ==========同步方法==========
-              let data = fileService.readFileSync(it.path)
-              if (this.searchInfo !== searchInfo) {
-                console.log('搜索内容改变，结束之前的搜索')
-                return
-              }
-              let regex = new RegExp(searchInfo, 'g')
-              let r = regex.exec(data)
-              if (r) {
-                this.resultFileCount += 1
-                while (r) {
-                  if (this.result.length >= this.limit) {
-                    this.hasMore = true
-                    return
-                  }
-                  let ctx = data.substr((r.index - 10) < 0 ? 0 : r.index - 10, 100)
-                  ctx = ctx.replace(r[0], '$searchInfo$')
-                  ctx = this.encodeHtml(ctx)
-                  ctx = ctx.replace('$searchInfo$', '<span style="background-color: goldenrod;">' + this.encodeHtml(r[0]) + '</span>')
-                  let obj = JSON.parse(JSON.stringify(it))
-                  obj.ctx = ctx
-                  obj.sPos = r.index
-                  obj.ePos = r.index + r[0].length
-                  this.result.push(obj)
-                  r = regex.exec(data)
-                }
-              }
+              this.findMatches(it, searchInfo)
               // ==========同步方法==========
 
               // ==========异步方法==========
-              // fileService.readFile(it.path).then(data => {
-              //   if (this.searchInfo !== searchInfo) {
-              //     console.log('搜索内容改变，结束之前的搜索')
-              //     return
-              //   }
-              //   let regex = new RegExp(searchInfo, 'g')
-              //   let r = regex.exec(data)
-              //   if (r) {
-              //     this.resultFileCount += 1
-              //     while (r) {
-              //       if (this.result.length >= this.limit) {
-              //         this.hasMore = true
-              //         return
-              //       }
-              //       let ctx = data.substr(r.index - 10, 100)
-              //       ctx = ctx.replace(r[0], '$searchInfo$')
-              //       ctx = this.encodeHtml(ctx)
-              //       ctx = ctx.replace('$searchInfo$', '<span style="background-color: goldenrod;">' + this.encodeHtml(r[0]) + '</span>')
-              //       let obj = JSON.parse(JSON.stringify(it))
-              //       obj.ctx = ctx
-              //       obj.sPos = r.index
-              //       obj.ePos = r.index + r[0].length
-              //       this.result.push(obj)
-              //       r = regex.exec(data)
-              //     }
-              //   }
-              // })
+              // this.findMatchesAsync(it, searchInfo)
               // ==========异步方法==========
-            } else if (it.fileType === fileService.fileTypeEnum.DIR) {
-              this.search(searchInfo, it.path)
             }
           })
+        })
+      },
+      findMatches (it, searchInfo) {
+        let data = fileService.readFileSync(it.path)
+        let regex = new RegExp(searchInfo, 'g')
+        let r = regex.exec(data)
+        if (r) {
+          this.resultFileCount += 1
+          while (r) {
+            if (this.result.length >= this.limit) {
+              this.hasMore = true
+              return
+            }
+            let ctx = data.substr((r.index - 10) < 0 ? 0 : r.index - 10, 100)
+            ctx = ctx.replace(r[0], '$searchInfo$')
+            ctx = this.encodeHtml(ctx)
+            ctx = ctx.replace('$searchInfo$', '<span style="background-color: goldenrod;">' + this.encodeHtml(r[0]) + '</span>')
+            let obj = JSON.parse(JSON.stringify(it))
+            obj.ctx = ctx
+            obj.sPos = r.index
+            obj.ePos = r.index + r[0].length
+            this.result.push(obj)
+            r = regex.exec(data)
+          }
+        }
+      },
+      async findMatchesByMonaco (it, searchInfo) {
+        if (this.searchInfo !== searchInfo) {
+          console.log('搜索内容改变，结束之前的搜索')
+          return
+        }
+        let uri = monaco.Uri.parse('file://' + it.path)
+        let model = monaco.editor.getModel(uri) // 如果该文档已经创建，打开则直接取得已存在的model
+        if (!model) {
+          // 否则创建新的model
+          let ret = fileService.readFileSync(it.path)
+          model = monaco.editor.createModel(ret, this.langName, uri) // 如 code="console.log('hello')", language="javascript"
+        }
+        let first = true
+        for (let match of model.findMatches(searchInfo)) {
+          // match.range = { endColumn
+          //                 endLineNumber
+          //                 startColumn
+          //                 startLineNumber }
+          if (this.result.length >= this.limit) {
+            this.hasMore = true
+            return
+          }
+          if (first) {
+            this.resultFileCount += 1
+            first = false
+          }
+          let ctx = model.getLineContent(match.range.startLineNumber)
+          ctx = ctx.substr((match.range.startColumn - 10) < 0 ? 0 : match.range.startColumn - 10, 100)
+          ctx = ctx.replace(searchInfo, '$searchInfo$')
+          ctx = this.encodeHtml(ctx)
+          ctx = ctx.replace('$searchInfo$', '<span style="background-color: goldenrod;">' + this.encodeHtml(searchInfo) + '</span>')
+          let obj = JSON.parse(JSON.stringify(it))
+          obj.ctx = ctx
+          obj.range = match.range
+          this.result.push(obj)
+        }
+      },
+      findMatchesAsync (it, searchInfo) {
+        fileService.readFile(it.path).then(data => {
+          if (this.searchInfo !== searchInfo) {
+            console.log('搜索内容改变，结束之前的搜索')
+            return
+          }
+          let regex = new RegExp(searchInfo, 'g')
+          let r = regex.exec(data)
+          if (r) {
+            this.resultFileCount += 1
+            while (r) {
+              if (this.result.length >= this.limit) {
+                this.hasMore = true
+                return
+              }
+              let ctx = data.substr(r.index - 10, 100)
+              ctx = ctx.replace(r[0], '$searchInfo$')
+              ctx = this.encodeHtml(ctx)
+              ctx = ctx.replace('$searchInfo$', '<span style="background-color: goldenrod;">' + this.encodeHtml(r[0]) + '</span>')
+              let obj = JSON.parse(JSON.stringify(it))
+              obj.ctx = ctx
+              obj.sPos = r.index
+              obj.ePos = r.index + r[0].length
+              this.result.push(obj)
+              r = regex.exec(data)
+            }
+          }
         })
       },
       encodeHtml (html) {

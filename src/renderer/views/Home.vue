@@ -58,7 +58,7 @@
 </template>
 
 <script>
-  import {remote} from 'electron'
+  import {remote, ipcRenderer} from 'electron'
   import MainTabs from '../components/MainTabs/MainTabs'
   import TreeMenu from '@/components/TreeMenu/TreeMenu'
   // import bookService from '@/service/BookService'
@@ -82,7 +82,6 @@
         workspace: '',
         files: [],
         activeFile: {},
-        activeFileListIndex: 0,
         activeFileList: [],
 
         settingKey: '',
@@ -116,6 +115,7 @@
         if (!workspace) {
           return
         }
+        remote.getGlobal('sharedObject').workspace = workspace
         // 读目录
         this.findFiles(workspace)
         // 记录历史
@@ -135,23 +135,24 @@
           console.log('==========saveUserSetting==========', ret)
         })
       },
-      saveOpenHistory (path) {
-        systemService.findOpenHistory().then(ret => {
-          let li = []
-          if (ret && ret.length > 0) {
-            li = ret[0].value
-          }
-          if (li.includes(path)) {
-            li.splice(li.indexOf(path), 1)
-          }
-          if (li.length >= 10) {
-            li.splice(0, 1)
-          }
-          li.push(path)
-          return systemService.saveOpenHistory(li)
-        }).then(ret => {
-          console.log('==========saveUserSetting==========', ret)
-        })
+      async saveOpenHistory (path) {
+        let ret = await systemService.findOpenHistory()
+        let li = []
+        if (ret && ret.length > 0) {
+          li = ret[0].value
+        }
+        if (li.includes(path)) {
+          li.splice(li.indexOf(path), 1)
+        }
+        if (li.length >= 10) {
+          li.splice(0, 1)
+        }
+        li.push(path)
+        this.updateOpenHistoryMenu(li)
+        systemService.saveOpenHistory(li)
+      },
+      updateOpenHistoryMenu (li) {
+        ipcRenderer.send('refresh-app-menu', li)
       },
       docModified (wteeFile, modified) {
         this.activeFileList.forEach((it, i) => {
@@ -217,7 +218,7 @@
             has = true
             it.active = true
             this.$set(this.activeFileList, i, it)
-            this.activeFileListIndex = i
+            this.$refs.MainTabs.tabbarScrollTo(i)
           } else {
             it.active = false
             this.$set(this.activeFileList, i, it)
@@ -229,7 +230,7 @@
         // }
         wteeFile.active = true
         this.activeFileList.push(wteeFile)
-        // this.activeFileListIndex = this.activeFileList.length - 1
+        this.$refs.MainTabs.tabbarScrollTo(this.activeFileList.length - 1)
       },
       saveSetting () {
         systemService.saveUserSetting(this.settingKey, this.settingValue).then(ret => {

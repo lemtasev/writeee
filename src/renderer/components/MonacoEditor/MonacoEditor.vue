@@ -132,17 +132,18 @@
       item: {
         immediate: true,
         handler: function (v, ov) {
+          console.log('item', v, ov)
           if (this.monacoEditor) {
             this.monacoEditor.focus()
           }
-          console.log('item', v, ov)
           if (ov && v.path === ov.path) {
             console.log('同一文件，不重复读')
             return
           }
           this.showEdit = false
           this.content = ''
-          if (v.fileType === fileService.fileTypeEnum.NORMAL) {
+          if (!v.path) return
+          if (v.fileType !== fileService.fileTypeEnum.DIR) {
             if (v.blksize > 5 * 1024 * 1024) {
               console.error('文件过大，无法打开！')
               return
@@ -150,13 +151,13 @@
             this.readFile(v)
           }
         }
-      },
-      hints (v, ov) {
-        // 当提示项非空时，触发提示，能够使提示项更新并显示
-        if (v.length > 0) {
-          this.monacoEditor.trigger('提示', 'editor.action.triggerSuggest', {})
-        }
       }
+      // hints (v, ov) {
+      //   // 当提示项非空时，触发提示，能够使提示项更新并显示
+      //   if (v.length > 0) {
+      //     this.monacoEditor.trigger('提示', 'editor.action.triggerSuggest', {})
+      //   }
+      // }
     },
     mounted () {
       console.log('mounted')
@@ -167,7 +168,7 @@
         base: 'vs',
         inherit: true,
         rules: [
-          {token: 'custom-number', foreground: '#ff2233', fontStyle: 'bold'},
+          {token: 'custom-number', foreground: '#b7b3f2', fontStyle: 'bold'},
           {token: 'custom-zh', foreground: '#808080'},
           {token: 'custom-en', foreground: '#2299ff'}
         ]
@@ -269,24 +270,21 @@
       readFile (weeFile) {
         console.log('开始读')
         // ==========model==========
+        let t1 = new Date().getTime()
         let uri = monaco.Uri.parse('file://' + weeFile.path)
         let model = monaco.editor.getModel(uri) // 如果该文档已经创建，打开则直接取得已存在的model
         if (!model) {
           // 否则创建新的model
           this.$set(this.item, 'loading', true)
-          fileService.readFile(weeFile.path).then(ret => {
-            console.log('读回调')
-            this.$set(this.item, 'loading', false)
-            model = monaco.editor.createModel(ret, this.langName, uri) // 如 code="console.log('hello')", language="javascript"
-            this.content = model.getValue()
-            this.showEdit = true
-            this.monacoEditor.setModel(model)
-          })
-        } else {
-          this.content = model.getValue()
-          this.showEdit = true
-          this.monacoEditor.setModel(model)
+          let ret = fileService.readFileSync(weeFile.path)
+          this.$set(this.item, 'loading', false)
+          model = monaco.editor.createModel(ret, this.langName, uri) // 如 code="console.log('hello')", language="javascript"
         }
+        let t2 = new Date().getTime()
+        console.log('读【' + weeFile.title + '】耗时', (t2 - t1))
+        this.content = model.getValue()
+        this.showEdit = true
+        this.monacoEditor.setModel(model)
         // ==========model==========
       },
       saveContent () {

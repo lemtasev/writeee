@@ -1,8 +1,10 @@
 'use strict'
 
 // import { app, BrowserWindow, Menu, Tray, clipboard, nativeImage, MenuItem, ipcMain } from 'electron'
-import {app, BrowserWindow, Menu, dialog} from 'electron'
+import {app, BrowserWindow, Menu, dialog, ipcMain} from 'electron'
 import path from 'path'
+import './sharedObject'
+import systemService from './SystemService'
 
 /**
  * Set `__static` path to static files in production
@@ -13,18 +15,14 @@ if (process.env.NODE_ENV !== 'development') {
 }
 
 let mainWindow
+let settingWin
+let searchWin
+
 const winURL = process.env.NODE_ENV === 'development'
   ? `http://localhost:9080`
   : `file://${__dirname}/index.html`
 
-global.sharedObject = {
-  workspace: ''
-}
-
 function createWindow () {
-  /**
-   * Initial window options
-   */
   mainWindow = new BrowserWindow({
     transparent: true, // 透明
     titleBarStyle: 'hiddenInset', // 无工具栏，但是有红绿灯，hidden边距小，hiddenInset边距大
@@ -40,58 +38,246 @@ function createWindow () {
   mainWindow.on('closed', () => {
     mainWindow = null
   })
+}
+
+async function createMenu (opt) {
+  // ==========构建系统菜单==========
+  const isMac = process.platform === 'darwin'
+  let openRecentSubmenuLi = []
+  if (opt && opt.openRecentSubmenuLi) {
+    openRecentSubmenuLi = opt.openRecentSubmenuLi
+  } else {
+    let ret = await systemService.findOpenHistory()
+    if (ret && ret.length > 0) {
+      openRecentSubmenuLi = ret[0].value
+    }
+  }
+  let openRecentSubmenu = []
+  openRecentSubmenuLi.reverse().forEach(it => {
+    openRecentSubmenu.push({
+      label: it,
+      click: function () {
+        global.sharedObject.workspace = it
+        mainWindow.reload()
+      }
+    })
+  })
+  let systemMenuJson = [
+    ...(isMac ? [{
+      label: app.name,
+      submenu: [
+        {role: 'about'},
+        {
+          label: '检查更新……',
+          // accelerator: 'CmdOrCtrl+R',
+          click: function () {
+            dialog.showMessageBox({
+              message: '怎么可能有这种功能?',
+              type: 'warning' // "none", "info", "error", "question" 或者 "warning"
+            })
+          }
+        },
+        {type: 'separator'},
+        {
+          label: '偏好设置',
+          // accelerator: 'CmdOrCtrl+R',
+          click: function () {
+            if (settingWin != null) {
+              settingWin.show() // 展示并且使窗口获得焦点.
+              return
+            }
+            settingWin = new BrowserWindow({
+              // modal: true,
+              alwaysOnTop: true,
+              show: false,
+              parent: mainWindow
+            })
+            settingWin.loadURL(winURL + '#Setting')
+            settingWin.once('ready-to-show', () => {
+              settingWin.show()
+            })
+            settingWin.on('closed', () => {
+              settingWin = null
+            })
+          }
+        },
+        {type: 'separator'},
+        {role: 'services'},
+        {type: 'separator'},
+        {role: 'hide'},
+        {role: 'hideothers'},
+        {role: 'unhide'},
+        {type: 'separator'},
+        {role: 'quit'}
+      ]
+    }] : []),
+    {
+      label: '文件',
+      submenu: [
+        {
+          label: '新建',
+          submenu: [
+            {
+              label: '章'
+              // icon: '/'
+              // sublabel: 'hahaha'
+            },
+            {
+              label: '卷'
+            },
+            {
+              label: '书'
+            },
+            {type: 'separator'},
+            {
+              label: '人物'
+            },
+            {
+              label: '物品'
+            }
+          ]
+        },
+        {
+          label: '打开',
+          click: function () {
+            let ret = dialog.showOpenDialog(mainWindow, {
+              defaultPath: '~',
+              properties: ['openDirectory']
+            })
+            if (!ret) return
+            global.sharedObject.workspace = ret[0]
+            mainWindow.reload()
+          }
+        },
+        {
+          label: '最近打开',
+          submenu: openRecentSubmenu
+        }
+      ]
+    },
+    {
+      label: '编辑',
+      submenu: [
+        {
+          label: '搜索',
+          accelerator: 'Ctrl+Shift+F',
+          click: function () {
+            if (searchWin != null) {
+              searchWin.show() // 展示并且使窗口获得焦点.
+              return
+            }
+            searchWin = new BrowserWindow({
+              title: '搜索',
+              frame: false,
+              alwaysOnTop: true,
+              minimizable: false,
+              maximizable: false,
+              // show: false,
+              parent: mainWindow,
+              height: 800,
+              width: 800
+            })
+            searchWin.loadURL(winURL + '#Search')
+            searchWin.once('ready-to-show', () => {
+              // searchWin.show()
+            })
+            searchWin.on('blur', (e) => {
+              searchWin.hide()
+            })
+            searchWin.on('close', (e) => {
+              // searchWin.hide()
+              // e.preventDefault()
+            })
+            searchWin.on('closed', () => {
+              searchWin = null
+            })
+          }
+        },
+        {type: 'separator'},
+        {
+          label: '撤销',
+          accelerator: 'CmdOrCtrl+Z',
+          role: 'undo'
+        },
+        {role: 'redo'},
+        {type: 'separator'},
+        {role: 'cut'},
+        {role: 'copy'},
+        {role: 'paste'},
+        ...(isMac ? [
+          {role: 'pasteAndMatchStyle'},
+          {role: 'delete'},
+          {role: 'selectAll'},
+          {type: 'separator'},
+          {
+            label: 'Speech',
+            submenu: [
+              {role: 'startspeaking'},
+              {role: 'stopspeaking'}
+            ]
+          }
+        ] : [
+          {role: 'delete'},
+          {type: 'separator'},
+          {role: 'selectAll'}
+        ])
+      ]
+    },
+    {
+      label: '视图',
+      submenu: [
+        {role: 'reload'},
+        {role: 'forcereload'},
+        {role: 'toggledevtools'},
+        {type: 'separator'},
+        {role: 'resetzoom'},
+        {role: 'zoomin'},
+        {role: 'zoomout'},
+        {type: 'separator'},
+        {role: 'togglefullscreen'}
+      ]
+    },
+    {
+      label: '窗口',
+      submenu: [
+        {role: 'minimize'},
+        {role: 'zoom'},
+        ...(isMac ? [
+          {type: 'separator'},
+          {role: 'front'},
+          {type: 'separator'},
+          {role: 'window'}
+        ] : [
+          {role: 'close'}
+        ])
+      ]
+    },
+    {
+      role: '帮助',
+      submenu: [
+        {
+          label: 'Learn More',
+          click: async () => {
+            const {shell} = require('electron')
+            await shell.openExternal('https://electronjs.org')
+          }
+        }
+      ]
+    }
+  ]
+  // ==========构建系统菜单==========
   Menu.setApplicationMenu(Menu.buildFromTemplate(systemMenuJson))
 }
 
-// let tray
-// function createTrayMenu () {
-//   // todo 有问题，不加载图片
-//   console.log('createTrayMenu')
-//   // tray = new Tray('/Users/yangqi/Pictures/cbotmazjsv.jpg')
-//   let p = path.join(__dirname, '/static')
-//   p = path.join(p, 'icon.jpg')
-//   let icon = nativeImage.createFromPath(p)
-//   console.log('p:', p)
-//   console.log('icon:', icon)
-//   tray = new Tray(icon)
-//   const contextMenu = Menu.buildFromTemplate([
-//     { label: 'Item1', type: 'radio' },
-//     { label: 'Item2', type: 'radio' },
-//     { label: 'Item3', type: 'radio', checked: true },
-//     { label: 'Item4', type: 'radio' }
-//   ])
-//   tray.setToolTip('This is my application.')
-//   tray.setContextMenu(contextMenu)
-// }
-
-// function test () {
-//   const text = clipboard.readText()
-//   if (text) {
-//     console.log('clipboard:', text)
-//   } else {
-//     clipboard.writeText('write by electron')
-//     console.log('已写入剪切板！')
-//   }
-// }
-
-// 查看app相关路径
-console.log('appData:', app.getPath('appData'))
-// 设置Dock小红点
-// app.setBadgeCount(app.getBadgeCount() + 9)
-
 app.on('ready', () => {
+  createMenu()
   createWindow()
-  // createTrayMenu()
-  // test()
 })
 
 app.on('activate', () => {
   if (mainWindow === null) {
     createWindow()
   }
-  // if (tray === null) {
-  //   // createTrayMenu()
-  // }
 })
 
 app.on('window-all-closed', () => {
@@ -100,217 +286,14 @@ app.on('window-all-closed', () => {
   }
 })
 
-let settingWin
-let searchWin
+// ==========ipc事件定义==========
+ipcMain.on('refresh-app-menu', (event, openRecentSubmenuLi) => {
+  createMenu({openRecentSubmenuLi: openRecentSubmenuLi})
+})
+// ==========ipc事件定义==========
 
-// ==========构建系统菜单==========
-const isMac = process.platform === 'darwin'
-let systemMenuJson = [
-  // { role: 'appMenu' }
-  ...(isMac ? [{
-    label: app.name,
-    submenu: [
-      {role: 'about'},
-      {
-        label: '检查更新……',
-        // accelerator: 'CmdOrCtrl+R',
-        click: function () {
-          dialog.showMessageBox({
-            message: '怎么可能有这种功能?',
-            type: 'warning' // "none", "info", "error", "question" 或者 "warning"
-          })
-        }
-      },
-      {type: 'separator'},
-      {
-        label: '偏好设置',
-        // accelerator: 'CmdOrCtrl+R',
-        click: function () {
-          if (settingWin != null) {
-            settingWin.show() // 展示并且使窗口获得焦点.
-            return
-          }
-          settingWin = new BrowserWindow({
-            // modal: true,
-            alwaysOnTop: true,
-            show: false,
-            parent: mainWindow
-          })
-          settingWin.loadURL(winURL + '#Setting')
-          settingWin.once('ready-to-show', () => {
-            settingWin.show()
-          })
-          settingWin.on('closed', () => {
-            settingWin = null
-          })
-        }
-      },
-      {type: 'separator'},
-      {role: 'services'},
-      {type: 'separator'},
-      {role: 'hide'},
-      {role: 'hideothers'},
-      {role: 'unhide'},
-      {type: 'separator'},
-      {role: 'quit'}
-    ]
-  }] : []),
-  // { role: 'fileMenu' }
-  {
-    label: '文件',
-    submenu: [
-      {
-        label: '新建',
-        submenu: [
-          {
-            label: '章'
-            // icon: '/'
-            // sublabel: 'hahaha'
-          },
-          {
-            label: '卷'
-          },
-          {
-            label: '书'
-          },
-          {type: 'separator'},
-          {
-            label: '人物'
-          },
-          {
-            label: '物品'
-          }
-        ]
-      },
-      {
-        label: '打开',
-        click: function () {
-          let ret = dialog.showOpenDialog(mainWindow, {
-            defaultPath: '~',
-            properties: ['openDirectory']
-          })
-          if (!ret) return
-          global.sharedObject.workspace = ret[0]
-          // mainWindow.loadURL(winURL + '/?workspace=' + ret[0])
-          mainWindow.reload()
-        }
-      }
-    ]
-  },
-  // { role: 'editMenu' }
-  {
-    label: '编辑',
-    submenu: [
-      {
-        label: '搜索',
-        accelerator: 'Ctrl+Shift+F',
-        click: function () {
-          if (searchWin != null) {
-            searchWin.show() // 展示并且使窗口获得焦点.
-            return
-          }
-          searchWin = new BrowserWindow({
-            title: '搜索',
-            frame: false,
-            alwaysOnTop: true,
-            minimizable: false,
-            maximizable: false,
-            // show: false,
-            parent: mainWindow,
-            height: 800,
-            width: 800
-          })
-          searchWin.loadURL(winURL + '#Search')
-          searchWin.once('ready-to-show', () => {
-            // searchWin.show()
-          })
-          searchWin.on('blur', (e) => {
-            searchWin.hide()
-          })
-          searchWin.on('close', (e) => {
-            // searchWin.hide()
-            // e.preventDefault()
-          })
-          searchWin.on('closed', () => {
-            searchWin = null
-          })
-        }
-      },
-      {type: 'separator'},
-      {
-        label: '撤销',
-        accelerator: 'CmdOrCtrl+Z',
-        role: 'undo'
-      },
-      {role: 'redo'},
-      {type: 'separator'},
-      {role: 'cut'},
-      {role: 'copy'},
-      {role: 'paste'},
-      ...(isMac ? [
-        {role: 'pasteAndMatchStyle'},
-        {role: 'delete'},
-        {role: 'selectAll'},
-        {type: 'separator'},
-        {
-          label: 'Speech',
-          submenu: [
-            {role: 'startspeaking'},
-            {role: 'stopspeaking'}
-          ]
-        }
-      ] : [
-        {role: 'delete'},
-        {type: 'separator'},
-        {role: 'selectAll'}
-      ])
-    ]
-  },
-  // { role: 'viewMenu' }
-  {
-    label: '视图',
-    submenu: [
-      {role: 'reload'},
-      {role: 'forcereload'},
-      {role: 'toggledevtools'},
-      {type: 'separator'},
-      {role: 'resetzoom'},
-      {role: 'zoomin'},
-      {role: 'zoomout'},
-      {type: 'separator'},
-      {role: 'togglefullscreen'}
-    ]
-  },
-  // { role: 'windowMenu' }
-  {
-    label: '窗口',
-    submenu: [
-      {role: 'minimize'},
-      {role: 'zoom'},
-      ...(isMac ? [
-        {type: 'separator'},
-        {role: 'front'},
-        {type: 'separator'},
-        {role: 'window'}
-      ] : [
-        {role: 'close'}
-      ])
-    ]
-  },
-  {
-    role: '帮助',
-    submenu: [
-      {
-        label: 'Learn More',
-        click: async () => {
-          const {shell} = require('electron')
-          await shell.openExternal('https://electronjs.org')
-        }
-      }
-    ]
-  }
-]
-// ==========构建系统菜单==========
+// 设置Dock小红点
+// app.setBadgeCount(app.getBadgeCount() + 9)
 
 // ==========构建菜单==========
 // const menu = new Menu()

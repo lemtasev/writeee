@@ -1,20 +1,38 @@
 <template>
     <div class="main-box">
 
-        <div class="main-tabbar">
-            <template v-for="(it, i) in activeFileList" :index="i.toString()">
-                <div class="main-tabbar-li" :class="{'active' : it.active}" @click="clickTabbar(i)">
-                <!--<div class="main-tabbar-li" :class="{'active' : i === home.activeFileListIndex}" @click="clickTabbar(i)">-->
+        <div class="main-tabbar" ref="MainTabbar">
+
+            <template v-for="(item, i) in activeFileList" :index="i.toString()">
+                <div class="main-tabbar-li" :class="{'active' : item.active}" @click="clickTabbar(i)"
+                     :title="item.path">
                     <div class="left">
-                        <span>{{it.title}}</span>
-                        <i v-show="it.modified" class="modified-flag"></i>
-                        <i v-show="it.loading" class="el-icon-loading"></i>
+                        <i v-show="item.modified" class="modified-flag"></i>
+
+                        <!--图标-->
+                        <i v-if="item.fileType == fileTypeEnum.DIR" class="menu-icon"
+                           :class="{'el-icon-folder-opened' : item.isOpen, 'el-icon-folder' : !item.isOpen}"></i>
+                        <i v-else-if="item.fileType == fileTypeEnum.CHAPTER" class="menu-icon el-icon-document"></i>
+                        <i v-else-if="item.fileType == fileTypeEnum.IMG" class="menu-icon el-icon-picture"></i>
+                        <i v-else-if="item.fileType == fileTypeEnum.CHARACTER" class="menu-icon el-icon-user-solid"></i>
+                        <i v-else-if="item.fileType == fileTypeEnum.SECT" class="menu-icon el-icon-house"></i>
+                        <i v-else-if="item.fileType == fileTypeEnum.SKILL" class="menu-icon el-icon-moon"></i>
+                        <i v-else-if="item.fileType == fileTypeEnum.PLACE" class="menu-icon el-icon-location"></i>
+                        <i v-else-if="item.fileType == fileTypeEnum.PROP" class="menu-icon el-icon-takeaway-box"></i>
+                        <i v-else-if="item.fileType == fileTypeEnum.MONSTER" class="menu-icon el-icon-warning"></i>
+                        <i v-else-if="item.fileType == fileTypeEnum.OUTLINE" class="menu-icon el-icon-tickets"></i>
+                        <i v-else-if="item.fileType == fileTypeEnum.REFERENCE" class="menu-icon el-icon-paperclip"></i>
+                        <i v-else-if="item.fileType == fileTypeEnum.UNKNOWN" class="menu-icon el-icon-question"></i>
+
+                        <span>{{item.title}}</span>
+                        <i v-show="item.loading" class="el-icon-loading"></i>
                     </div>
                     <div class="right">
-                        <i class="el-icon-close" @click.stop="closeTab(i)"></i>
+                        <i class="close-btn el-icon-close" @click.stop="closeTab(i)"></i>
                     </div>
                 </div>
             </template>
+
         </div>
 
         <div class="main-container">
@@ -28,6 +46,7 @@
 
 <script>
   import MonacoEditor from '@/components/MonacoEditor/MonacoEditor'
+  import fileService from '@/service/FileService'
 
   export default {
     name: 'MainTabs',
@@ -47,7 +66,12 @@
       }
     },
     data () {
-      return {}
+      return {
+        fileTypeEnum: {}
+      }
+    },
+    created () {
+      this.fileTypeEnum = fileService.fileTypeEnum
     },
     watch: {},
     methods: {
@@ -56,6 +80,13 @@
       },
       closeTab (i) {
         this.home.closeFile(i)
+      },
+      tabbarScrollTo (i) {
+        setTimeout(_ => {
+          let parentOffsetLeft = this.$refs.MainTabbar.offsetLeft
+          let childOffsetLeft = this.$refs.MainTabbar.children[i].offsetLeft
+          this.$refs.MainTabbar.scrollLeft = childOffsetLeft - parentOffsetLeft
+        }, 0)
       }
     }
   }
@@ -74,28 +105,45 @@
         align-items: center;
         justify-content: center;
 
+        .main-tabbar::-webkit-scrollbar {
+            display: none; /* Chrome Safari 隐藏滚动条*/
+        }
         .main-tabbar {
             width: 100%;
-            height: 34px;
             display: flex;
-            background-color: #eee;
+            background-color: #ececec;
             overflow-x: scroll;
             .main-tabbar-li {
                 min-width: 120px;
                 padding: 0 10px;
                 height: 34px;
-                line-height: 34px;
+                border-right: 1px solid #c9c9c9;
                 cursor: default;
                 display: flex;
+                flex: none;
                 align-items: center;
                 justify-content: space-between;
-                .left{
+                transition: all 0.3s;
+                .left {
                     display: flex;
                     align-items: center;
+                    span {
+                        white-space: nowrap;
+                    }
                 }
-                .right{
+                .right {
                     display: flex;
                     align-items: center;
+                    .close-btn {
+                        padding: 5px;
+                        margin-left: 5px;
+                        transition: all 0.3s;
+                    }
+                    .close-btn:hover {
+                        border-radius: 50%;
+                        background-color: #eee;
+                        color: black;
+                    }
                 }
                 .modified-flag {
                     width: 10px;
@@ -104,9 +152,17 @@
                     background-color: #09bb07;
                     margin: 0 5px;
                 }
+                .menu-icon {
+                    margin: 0 5px;
+                }
             }
             .main-tabbar-li.active {
                 background-color: white;
+                border-radius: 10px 10px 0px 0px;
+            }
+            .main-tabbar-li:not(.active):hover {
+                background-color: #d3d3d3;
+                border-radius: 10px 10px 0px 0px;
             }
         }
         .main-container {

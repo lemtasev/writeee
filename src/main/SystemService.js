@@ -1,4 +1,4 @@
-import db from '@/datastore'
+import db from './datastore'
 
 const table = 'system'
 
