@@ -188,7 +188,7 @@ export default {
     return new Promise((resolve, reject) => {
       if (!weeFile) reject(new Error('参数错误'))
       let oldPath = weeFile.path
-      let newPath = oldPath.substring(0, oldPath.lastIndexOf('/') + 1) + weeFile.title
+      let newPath = oldPath.substring(0, oldPath.lastIndexOf('/') + 1) + weeFile.title + (weeFile.suffix ? '.' + weeFile.suffix : '')
       weeFile.path = newPath
       console.log('准备改名')
       console.log(oldPath)

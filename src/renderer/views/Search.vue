@@ -122,17 +122,17 @@
               // ==========monnaco model matches==========
 
               // ==========同步方法==========
-              this.findMatches(it, searchInfo)
+              this.findMatchesSync(it, searchInfo)
               // ==========同步方法==========
 
               // ==========异步方法==========
-              // this.findMatchesAsync(it, searchInfo)
+              // this.findMatches(it, searchInfo)
               // ==========异步方法==========
             }
           })
         })
       },
-      findMatches (it, searchInfo) {
+      findMatchesSync (it, searchInfo) {
         let data = fileService.readFileSync(it.path)
         let regex = new RegExp(searchInfo, 'g')
         let r = regex.exec(data)
@@ -193,7 +193,7 @@
           this.result.push(obj)
         }
       },
-      findMatchesAsync (it, searchInfo) {
+      findMatches (it, searchInfo) {
         fileService.readFile(it.path).then(data => {
           if (this.searchInfo !== searchInfo) {
             console.log('搜索内容改变，结束之前的搜索')
