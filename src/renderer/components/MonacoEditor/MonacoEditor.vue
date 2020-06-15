@@ -54,6 +54,16 @@
   // variable  .[name,value]
   // meta      .[content]
   // ==========token class==========
+  // require.config({ paths: { 'vs': 'monaco-editor/vs' } })
+  // require.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
+  // require.config({ paths: { 'vs': '../node_modules/monaco-editor/min/vs' }});
+  // require.config({
+  //   'vs/nls' : {
+  //     availableLanguages: {
+  //       '*': 'zh-cn'
+  //     }
+  //   }
+  // });
 
   import fileService from '@/service/FileService'
   import * as monaco from 'monaco-editor'
@@ -138,6 +148,7 @@
           }
           if (ov && v.path === ov.path) {
             console.log('同一文件，不重复读')
+            this.setRevealRange(v.range)
             return
           }
           this.showEdit = false
@@ -285,7 +296,28 @@
         this.content = model.getValue()
         this.showEdit = true
         this.monacoEditor.setModel(model)
+
+        this.setRevealRange(weeFile.range)
+        // ==========test==========
+        // this.monacoEditor.trigger('ABC', 'editor.action.selectHighlights')
+        // this.monacoEditor.trigger('', 'actions.find')
+        // const selections = this.monacoEditor.getSelections()
+        // console.log('selections', selections)
+        // ==========test==========
         // ==========model==========
+      },
+      // 检查是否有选中范围
+      setRevealRange (range) {
+        if (range) {
+          setTimeout(() => {
+            console.log('跳转到指定位置', range)
+            this.monacoEditor.revealRangeInCenter(range)
+            // 设置高亮
+            this.monacoEditor.setSelection(range)
+            this.monacoEditor.trigger('', 'actions.find')
+            // this.monacoEditor.trigger('', 'editor.action.selectHighlights')
+          }, 0)
+        }
       },
       saveContent () {
         if (!this.item.modified) {

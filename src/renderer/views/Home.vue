@@ -58,7 +58,7 @@
 </template>
 
 <script>
-  import {remote, ipcRenderer} from 'electron'
+  // import {remote, ipcRenderer} from 'electron'
   import MainTabs from '../components/MainTabs/MainTabs'
   import TreeMenu from '@/components/TreeMenu/TreeMenu'
   // import bookService from '@/service/BookService'
@@ -95,7 +95,7 @@
     },
     created () {
       console.log('Home created')
-      this.workspace = remote.getGlobal('sharedObject').workspace
+      this.workspace = this.$electron.remote.getGlobal('sharedObject').workspace
       this.initHome(this.workspace)
     },
     methods: {
@@ -115,7 +115,7 @@
         if (!workspace) {
           return
         }
-        remote.getGlobal('sharedObject').workspace = workspace
+        this.$electron.remote.getGlobal('sharedObject').workspace = workspace
         // 读目录
         this.findFiles(workspace)
         // 记录历史
@@ -152,7 +152,7 @@
         systemService.saveOpenHistory(li)
       },
       updateOpenHistoryMenu (li) {
-        ipcRenderer.send('refresh-app-menu', li)
+        this.$electron.ipcRenderer.send('refresh-app-menu', li)
       },
       docModified (wteeFile, modified) {
         this.activeFileList.forEach((it, i) => {
@@ -164,7 +164,7 @@
       },
       closeFile (index) {
         if (this.activeFileList[index].modified) {
-          let ret = remote.dialog.showMessageBox(remote.getCurrentWindow(), {
+          let ret = this.$electron.remote.dialog.showMessageBox(this.$electron.remote.getCurrentWindow(), {
             message: '是否要保存对 ' + this.activeFileList[index].title + ' 的更改?',
             detail: '如果不保存，你的更改将丢失。',
             type: 'warning',

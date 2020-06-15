@@ -2,7 +2,7 @@
 
     <div class="search-box">
 
-        <div class="search-title-line"></div>
+        <div class="search-title-line">{{workspace}}</div>
 
         <div class="search-line">
             <div class="search-history-btn" @click="showHistory">
@@ -15,7 +15,7 @@
         </div>
 
         <div class="search-ope">
-            <div class="search-ope-btn" @click="openFindInPage">
+            <div class="search-ope-btn" @click="">
                 <i class="el-icon-setting"></i>
             </div>
         </div>
@@ -48,7 +48,7 @@
   import fileService from '@/service/FileService'
   import * as monaco from 'monaco-editor'
 
-  import { remote } from 'electron'
+  // import { remote } from 'electron'
 
   export default {
     name: 'Search',
@@ -76,12 +76,9 @@
     },
     created () {
       console.log('Search created')
-      this.workspace = remote.getGlobal('sharedObject').workspace
+      this.workspace = this.$electron.remote.getGlobal('sharedObject').workspace
     },
     methods: {
-      openFindInPage () {
-        console.log('findInPage', remote.getCurrentWindow().webContents.findInPage(this.searchInfo))
-      },
       clickResult (item) {
         this.activeOne(item)
         this.activeFile = item
@@ -118,11 +115,11 @@
               this.search(searchInfo, it.path)
             } else {
               // ==========monnaco model matches==========
-              // this.findMatchesByMonaco(it, searchInfo)
+              this.findMatchesByMonaco(it, searchInfo)
               // ==========monnaco model matches==========
 
               // ==========同步方法==========
-              this.findMatchesSync(it, searchInfo)
+              // this.findMatchesSync(it, searchInfo)
               // ==========同步方法==========
 
               // ==========异步方法==========
@@ -168,29 +165,31 @@
           let ret = fileService.readFileSync(it.path)
           model = monaco.editor.createModel(ret, this.langName, uri) // 如 code="console.log('hello')", language="javascript"
         }
-        let first = true
-        for (let match of model.findMatches(searchInfo)) {
-          // match.range = { endColumn
-          //                 endLineNumber
-          //                 startColumn
-          //                 startLineNumber }
-          if (this.result.length >= this.limit) {
-            this.hasMore = true
-            return
+        // ==========为了提高速度，先正则检查是否有匹配，再findMatches==========
+        let data = model.getValue()
+        let regex = new RegExp(searchInfo, 'g')
+        let r = regex.exec(data)
+        // ==========为了提高速度，先正则检查是否有匹配，再findMatches==========
+        if (r) {
+          this.resultFileCount += 1
+          let ms = model.findMatches(searchInfo)
+          console.log('model.findMatches(searchInfo)', ms)
+          for (let match of ms) {
+            // match.range = { endColumn, endLineNumber, startColumn, startLineNumber }
+            if (this.result.length >= this.limit) {
+              this.hasMore = true
+              return
+            }
+            let ctx = model.getLineContent(match.range.startLineNumber)
+            ctx = ctx.substr((match.range.startColumn - 10) < 0 ? 0 : match.range.startColumn - 10, 100)
+            ctx = ctx.replace(searchInfo, '$searchInfo$')
+            ctx = this.encodeHtml(ctx)
+            ctx = ctx.replace('$searchInfo$', '<span style="background-color: goldenrod;">' + this.encodeHtml(searchInfo) + '</span>')
+            let obj = JSON.parse(JSON.stringify(it))
+            obj.ctx = ctx
+            obj.range = match.range
+            this.result.push(obj)
           }
-          if (first) {
-            this.resultFileCount += 1
-            first = false
-          }
-          let ctx = model.getLineContent(match.range.startLineNumber)
-          ctx = ctx.substr((match.range.startColumn - 10) < 0 ? 0 : match.range.startColumn - 10, 100)
-          ctx = ctx.replace(searchInfo, '$searchInfo$')
-          ctx = this.encodeHtml(ctx)
-          ctx = ctx.replace('$searchInfo$', '<span style="background-color: goldenrod;">' + this.encodeHtml(searchInfo) + '</span>')
-          let obj = JSON.parse(JSON.stringify(it))
-          obj.ctx = ctx
-          obj.range = match.range
-          this.result.push(obj)
         }
       },
       findMatches (it, searchInfo) {

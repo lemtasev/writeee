@@ -14,16 +14,21 @@ if (process.env.NODE_ENV !== 'development') {
   global.__static = path.join(__dirname, '/static').replace(/\\/g, '\\\\')
 }
 
-let mainWindow
-let settingWin
-let searchWin
+// let mainWindow
+// let settingWin
+// let searchWin
+let wteeWindows = {
+  mainWindow: null,
+  settingWin: null,
+  searchWin: null
+}
 
 const winURL = process.env.NODE_ENV === 'development'
   ? `http://localhost:9080`
   : `file://${__dirname}/index.html`
 
 function createWindow () {
-  mainWindow = new BrowserWindow({
+  wteeWindows.mainWindow = new BrowserWindow({
     transparent: true, // 透明
     titleBarStyle: 'hiddenInset', // 无工具栏，但是有红绿灯，hidden边距小，hiddenInset边距大
     // frame: false, // 无边框、工具栏
@@ -34,9 +39,17 @@ function createWindow () {
     height: 768,
     width: 1366
   })
-  mainWindow.loadURL(winURL)
-  mainWindow.on('closed', () => {
-    mainWindow = null
+  wteeWindows.mainWindow.loadURL(winURL)
+  wteeWindows.mainWindow.on('closed', () => {
+    wteeWindows.mainWindow = null
+  })
+}
+
+function reloadAllWindows () {
+  Object.values(wteeWindows).forEach(it => {
+    if (it != null) {
+      it.reload()
+    }
   })
 }
 
@@ -58,7 +71,8 @@ async function createMenu (opt) {
       label: it,
       click: function () {
         global.sharedObject.workspace = it
-        mainWindow.reload()
+        // mainWindow.reload()
+        reloadAllWindows()
       }
     })
   })
@@ -82,22 +96,22 @@ async function createMenu (opt) {
           label: '偏好设置',
           // accelerator: 'CmdOrCtrl+R',
           click: function () {
-            if (settingWin != null) {
-              settingWin.show() // 展示并且使窗口获得焦点.
+            if (wteeWindows.settingWin != null) {
+              wteeWindows.settingWin.show() // 展示并且使窗口获得焦点.
               return
             }
-            settingWin = new BrowserWindow({
+            wteeWindows.settingWin = new BrowserWindow({
               // modal: true,
               alwaysOnTop: true,
               show: false,
-              parent: mainWindow
+              parent: wteeWindows.mainWindow
             })
-            settingWin.loadURL(winURL + '#Setting')
-            settingWin.once('ready-to-show', () => {
-              settingWin.show()
+            wteeWindows.settingWin.loadURL(winURL + '#Setting')
+            wteeWindows.settingWin.once('ready-to-show', () => {
+              wteeWindows.settingWin.show()
             })
-            settingWin.on('closed', () => {
-              settingWin = null
+            wteeWindows.settingWin.on('closed', () => {
+              wteeWindows.settingWin = null
             })
           }
         },
@@ -140,13 +154,14 @@ async function createMenu (opt) {
         {
           label: '打开',
           click: function () {
-            let ret = dialog.showOpenDialog(mainWindow, {
+            let ret = dialog.showOpenDialog(wteeWindows.mainWindow, {
               defaultPath: '~',
               properties: ['openDirectory']
             })
             if (!ret) return
             global.sharedObject.workspace = ret[0]
-            mainWindow.reload()
+            // mainWindow.reload()
+            reloadAllWindows()
           }
         },
         {
@@ -162,34 +177,37 @@ async function createMenu (opt) {
           label: '搜索',
           accelerator: 'Ctrl+Shift+F',
           click: function () {
-            if (searchWin != null) {
-              searchWin.show() // 展示并且使窗口获得焦点.
+            if (wteeWindows.searchWin != null) {
+              wteeWindows.searchWin.show() // 展示并且使窗口获得焦点.
               return
             }
-            searchWin = new BrowserWindow({
+            wteeWindows.searchWin = new BrowserWindow({
               title: '搜索',
               frame: false,
               alwaysOnTop: true,
               minimizable: false,
               maximizable: false,
               // show: false,
-              parent: mainWindow,
+              parent: wteeWindows.mainWindow,
               height: 800,
               width: 800
             })
-            searchWin.loadURL(winURL + '#Search')
-            searchWin.once('ready-to-show', () => {
+            wteeWindows.searchWin.loadURL(winURL + '#Search')
+            wteeWindows.searchWin.once('ready-to-show', () => {
               // searchWin.show()
             })
-            searchWin.on('blur', (e) => {
-              searchWin.hide()
+            wteeWindows.searchWin.on('show', (e) => {
             })
-            searchWin.on('close', (e) => {
+            wteeWindows.searchWin.on('blur', (e) => {
+              wteeWindows.searchWin.hide()
+              // searchWin.close()
+            })
+            wteeWindows.searchWin.on('close', (e) => {
               // searchWin.hide()
               // e.preventDefault()
             })
-            searchWin.on('closed', () => {
-              searchWin = null
+            wteeWindows.searchWin.on('closed', () => {
+              wteeWindows.searchWin = null
             })
           }
         },
@@ -275,7 +293,7 @@ app.on('ready', () => {
 })
 
 app.on('activate', () => {
-  if (mainWindow === null) {
+  if (wteeWindows.mainWindow === null) {
     createWindow()
   }
 })
