@@ -43,12 +43,9 @@
 </template>
 
 <script>
-  // import {BrowserWindow} from 'electron'
   import MonacoEditor from '../components/MonacoEditor/MonacoEditor'
   import fileService from '@/service/FileService'
   import * as monaco from 'monaco-editor'
-
-  // import { remote } from 'electron'
 
   export default {
     name: 'Search',
@@ -61,8 +58,6 @@
         activeFile: {},
         searchInfo: '',
         workspace: '',
-        // workspace: '/Users/yangqi/work/myproject/electron-all-projects/workspace',
-        // workspace: '/Users/yangqi/work/myproject/electron-all-projects/writeee/src',
         result: [],
         resultFileCount: 0, // 文件个数
         limit: 100, // 搜索结果最多显示个数
@@ -129,30 +124,6 @@
           })
         })
       },
-      findMatchesSync (it, searchInfo) {
-        let data = fileService.readFileSync(it.path)
-        let regex = new RegExp(searchInfo, 'g')
-        let r = regex.exec(data)
-        if (r) {
-          this.resultFileCount += 1
-          while (r) {
-            if (this.result.length >= this.limit) {
-              this.hasMore = true
-              return
-            }
-            let ctx = data.substr((r.index - 10) < 0 ? 0 : r.index - 10, 100)
-            ctx = ctx.replace(r[0], '$searchInfo$')
-            ctx = this.encodeHtml(ctx)
-            ctx = ctx.replace('$searchInfo$', '<span style="background-color: goldenrod;">' + this.encodeHtml(r[0]) + '</span>')
-            let obj = JSON.parse(JSON.stringify(it))
-            obj.ctx = ctx
-            obj.sPos = r.index
-            obj.ePos = r.index + r[0].length
-            this.result.push(obj)
-            r = regex.exec(data)
-          }
-        }
-      },
       async findMatchesByMonaco (it, searchInfo) {
         if (this.searchInfo !== searchInfo) {
           console.log('搜索内容改变，结束之前的搜索')
@@ -163,7 +134,7 @@
         if (!model) {
           // 否则创建新的model
           let ret = fileService.readFileSync(it.path)
-          model = monaco.editor.createModel(ret, this.langName, uri) // 如 code="console.log('hello')", language="javascript"
+          model = monaco.editor.createModel(ret, this.langName, uri)
         }
         // ==========为了提高速度，先正则检查是否有匹配，再findMatches==========
         let data = model.getValue()
@@ -189,6 +160,30 @@
             obj.ctx = ctx
             obj.range = match.range
             this.result.push(obj)
+          }
+        }
+      },
+      findMatchesSync (it, searchInfo) {
+        let data = fileService.readFileSync(it.path)
+        let regex = new RegExp(searchInfo, 'g')
+        let r = regex.exec(data)
+        if (r) {
+          this.resultFileCount += 1
+          while (r) {
+            if (this.result.length >= this.limit) {
+              this.hasMore = true
+              return
+            }
+            let ctx = data.substr((r.index - 10) < 0 ? 0 : r.index - 10, 100)
+            ctx = ctx.replace(r[0], '$searchInfo$')
+            ctx = this.encodeHtml(ctx)
+            ctx = ctx.replace('$searchInfo$', '<span style="background-color: goldenrod;">' + this.encodeHtml(r[0]) + '</span>')
+            let obj = JSON.parse(JSON.stringify(it))
+            obj.ctx = ctx
+            obj.sPos = r.index
+            obj.ePos = r.index + r[0].length
+            this.result.push(obj)
+            r = regex.exec(data)
           }
         }
       },
