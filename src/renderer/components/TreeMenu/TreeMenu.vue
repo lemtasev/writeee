@@ -93,6 +93,7 @@
       }
     },
     created () {
+      console.log(`${this.$options.name} created`)
       this.initContextMenu()
       this.fileTypeEnum = fileService.fileTypeEnum
     },
@@ -402,11 +403,11 @@
     }
 
     .tree-menu-item-content.active {
-        background-color: rgba(0, 191, 255, 0.4);
+        background-color: @themeColor40;
     }
 
     .tree-menu-item-content:hover {
-        background-color: rgba(0, 191, 255, 0.2);
+        background-color: @themeColor20;
     }
 
     .tree-menu-item-children {

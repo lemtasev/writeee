@@ -56,14 +56,8 @@
   // ==========token class==========
   // require.config({ paths: { 'vs': 'monaco-editor/vs' } })
   // require.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
-  // require.config({ paths: { 'vs': '../node_modules/monaco-editor/min/vs' }});
-  // require.config({
-  //   'vs/nls' : {
-  //     availableLanguages: {
-  //       '*': 'zh-cn'
-  //     }
-  //   }
-  // });
+  // require.config({paths: { 'vs': '../../../../node_modules/monaco-editor/min/vs' }})
+  // require.config({'vs/nls': {availableLanguages: {'*': 'zh-cn'}}})
 
   import fileService from '@/service/FileService'
   import * as monaco from 'monaco-editor'
@@ -132,10 +126,11 @@
           }
         ],
         cursorPosition: {
-          column: 0,
-          lineNumber: 0
+          column: 1,
+          lineNumber: 1
         },
-        modelSelection: {} // 'path': 'Selection' 记录当前打开文件的光标选中位置，或许可以持久化到磁盘
+        modelSelection: {}, // 'path': 'Selection' 记录当前打开文件的光标选中位置，或许可以持久化到磁盘
+        viewState: {} // 'path': 'Selection' 记录当前打开文件的光标选中位置，或许可以持久化到磁盘
       }
     },
     watch: {
@@ -201,6 +196,22 @@
           }
         }
       })
+      // monaco.languages.registerHoverProvider(langName, {
+      //   provideHover: function (model, position, token) {
+      //     return Promise.resolve({
+      //       contents: [ { value: 'hello world' } ],
+      //       range: { startLineNumber: 5, startColumn: 1, endLineNumber: 5, endColumn: 1 }
+      //     })
+      //   }
+      // })
+      // monaco.languages.registerDefinitionProvider(langName, {
+      //   provideDefinition: function (model, position, token) {
+      //     return Promise.resolve([{
+      //       uri: monaco.Uri.parse('http://host/to_file_name'),
+      //       range: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 }
+      //     }])
+      //   }
+      // })
       // ==========初始化wtee主题==========
       this.monacoEditor = monaco.editor.create(this.$refs.monacoContainer, {
         // value: this.content,
@@ -223,7 +234,11 @@
       })
       this.monacoEditor.onDidChangeModel(e => {
         console.log('onDidChangeModel', e)
-        if (this.modelSelection[this.item.path]) this.monacoEditor.setSelection(this.modelSelection[this.item.path])
+        this.cursorPosition = {column: 1, lineNumber: 1}
+        if (this.viewState[this.item.path]) {
+          this.monacoEditor.restoreViewState(this.viewState[this.item.path])
+          this.cursorPosition = this.viewState[this.item.path].cursorState[0].position
+        }
       })
       this.monacoEditor.onDidBlurEditorText(_ => {
         console.log('onDidBlurEditorText')
@@ -235,39 +250,91 @@
       })
       this.monacoEditor.onDidChangeCursorSelection(e => {
         console.log('onDidChangeCursorSelection', e)
-        this.modelSelection[this.item.path] = e.selection
+        this.viewState[this.item.path] = this.monacoEditor.saveViewState()
+        // ==========content widget==========
+        // let contentWidget = {
+        //   updateInnerHtml: function (html) {
+        //     this.getDomNode().innerHTML = html
+        //   },
+        //   domNode: null,
+        //   getId: function () {
+        //     return 'my.content.widget'
+        //   },
+        //   getDomNode: function () {
+        //     if (!this.domNode) {
+        //       this.domNode = document.createElement('div')
+        //       this.domNode.innerHTML = 'My content widget'
+        //       this.domNode.style.background = 'grey'
+        //     }
+        //     return this.domNode
+        //   },
+        //   getPosition: function () {
+        //     return {
+        //       position: {
+        //         lineNumber: e.selection.endLineNumber,
+        //         column: e.selection.endColumn
+        //       },
+        //       preference: [monaco.editor.ContentWidgetPositionPreference.ABOVE, monaco.editor.ContentWidgetPositionPreference.BELOW]
+        //     }
+        //   }
+        // }
+        // this.monacoEditor.removeContentWidget(contentWidget)
+        // let selection = this.monacoEditor.getSelection()
+        // if (selection && !selection.isEmpty()) {
+        //   let selectionValue = this.monacoEditor.getModel().getValueInRange(selection)
+        //   contentWidget.updateInnerHtml(selectionValue)
+        //   this.monacoEditor.addContentWidget(contentWidget)
+        // }
+        // ==========content widget==========
       })
+      this.monacoEditor.onDidScrollChange(e => {
+        console.log('onDidScrollChange', e)
+        this.viewState[this.item.path] = this.monacoEditor.saveViewState()
+      })
+      // ==========注册快捷键==========
       this.monacoEditor.addCommand(monaco.KeyMod.WinCtrl | monaco.KeyCode.US_SLASH, function () {
+        console.log('提示')
         that.monacoEditor.trigger('提示', 'editor.action.triggerSuggest', {})
       })
       this.monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_S, function () {
         console.log('快捷键保存当前文件')
         that.saveContent()
       })
+      // this.monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_E, function () {
+      //   console.log('CtrlCmd+E')
+      //   that.monacoEditor.trigger('', 'editor.action.showHover', {})
+      // })
+      // this.monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_W, function () {
+      //   console.log('CtrlCmd+W')
+      //   that.monacoEditor.trigger('', 'editor.action.showDefinitionPreviewHover', {})
+      // })
+      // ==========注册快捷键==========
+      console.log('All languages ==========', monaco.languages.getLanguages().map(it => {
+        return it.id
+      }))
     },
     methods: {
-      closeFileWithoutSave (weeFile) {
-        console.log('关闭不保存文件', weeFile)
-        let uri = monaco.Uri.parse('file://' + weeFile.path)
+      closeFileWithoutSave (wteeFile) {
+        console.log('关闭不保存文件', wteeFile)
+        let uri = monaco.Uri.parse('file://' + wteeFile.path)
         let model = monaco.editor.getModel(uri) // 如果该文档已经创建，打开则直接取得已存在的model
         model.dispose()
-        weeFile.modified = false
+        wteeFile.modified = false
       },
-      closeFileWithSave (weeFile) {
-        console.log('关闭并保存文件', weeFile)
-        let uri = monaco.Uri.parse('file://' + weeFile.path)
+      closeFileWithSave (wteeFile) {
+        console.log('关闭并保存文件', wteeFile)
+        let uri = monaco.Uri.parse('file://' + wteeFile.path)
         let model = monaco.editor.getModel(uri) // 如果该文档已经创建，打开则直接取得已存在的model
         let value = model.getValue()
-        this.$set(weeFile, 'loading', true)
-        fileService.saveFile(weeFile, value).then(_ => {
-          this.$set(weeFile, 'loading', false)
+        this.$set(wteeFile, 'loading', true)
+        fileService.saveFile(wteeFile, value).then(_ => {
+          this.$set(wteeFile, 'loading', false)
         })
         model.dispose() // 此处也许可以继续保留
-        weeFile.modified = false
+        wteeFile.modified = false
       },
       docModified (modified) {
         console.log('docModified')
-        // this.item.modified = modified
         this.home.docModified(this.item, modified)
       },
       renameFile () {
@@ -278,32 +345,26 @@
           this.$set(this.item, 'loading', false)
         })
       },
-      readFile (weeFile) {
+      readFile (wteeFile) {
         console.log('开始读')
         // ==========model==========
         let t1 = new Date().getTime()
-        let uri = monaco.Uri.parse('file://' + weeFile.path)
+        let uri = monaco.Uri.parse('file://' + wteeFile.path)
         let model = monaco.editor.getModel(uri) // 如果该文档已经创建，打开则直接取得已存在的model
         if (!model) {
           // 否则创建新的model
           this.$set(this.item, 'loading', true)
-          let ret = fileService.readFileSync(weeFile.path)
+          let ret = fileService.readFileSync(wteeFile.path)
           this.$set(this.item, 'loading', false)
           model = monaco.editor.createModel(ret, this.langName, uri) // 如 code="console.log('hello')", language="javascript"
         }
         let t2 = new Date().getTime()
-        console.log('读【' + weeFile.title + '】耗时', (t2 - t1))
+        console.log('读【' + wteeFile.title + '】耗时', (t2 - t1))
         this.content = model.getValue()
         this.showEdit = true
         this.monacoEditor.setModel(model)
 
-        this.setRevealRange(weeFile.range)
-        // ==========test==========
-        // this.monacoEditor.trigger('ABC', 'editor.action.selectHighlights')
-        // this.monacoEditor.trigger('', 'actions.find')
-        // const selections = this.monacoEditor.getSelections()
-        // console.log('selections', selections)
-        // ==========test==========
+        this.setRevealRange(wteeFile.range)
         // ==========model==========
       },
       // 检查是否有选中范围
@@ -315,7 +376,6 @@
             // 设置高亮
             this.monacoEditor.setSelection(range)
             this.monacoEditor.trigger('', 'actions.find')
-            // this.monacoEditor.trigger('', 'editor.action.selectHighlights')
           }, 0)
         }
       },
@@ -395,7 +455,7 @@
             width: calc(100% - 40px);
             height: 69px;
             padding: 0 20px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid @colorBorder;
             display: flex;
             align-items: center;
             .title-ipt {
@@ -418,7 +478,7 @@
             width: calc(100% - 40px);
             height: 29px;
             padding: 0 20px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid @colorBorder;
             display: flex;
             font-size: @fontSizeTiny;
             color: @wxColorGray;
@@ -438,7 +498,7 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                span{
+                span {
                     margin: 0 5px;
                 }
             }

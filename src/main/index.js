@@ -14,30 +14,44 @@ if (process.env.NODE_ENV !== 'development') {
   global.__static = path.join(__dirname, '/static').replace(/\\/g, '\\\\')
 }
 
-// let mainWindow
-// let settingWin
-// let searchWin
+const winURL = process.env.NODE_ENV === 'development'
+  ? `http://localhost:9080`
+  : `file://${__dirname}/index.html`
+
 let wteeWindows = {
+  welcomeWindow: null,
   mainWindow: null,
   settingWin: null,
   searchWin: null
 }
 
-const winURL = process.env.NODE_ENV === 'development'
-  ? `http://localhost:9080`
-  : `file://${__dirname}/index.html`
+function createWelcomeWindow () {
+  wteeWindows.welcomeWindow = new BrowserWindow({
+    title: 'Welcome to Writee',
+    resizable: process.env.NODE_ENV === 'development',
+    maximizable: false,
+    useContentSize: true,
+    width: 777,
+    height: 460
+  })
+  wteeWindows.welcomeWindow.loadURL(winURL + '#Welcome')
+  wteeWindows.welcomeWindow.on('closed', () => {
+    wteeWindows.welcomeWindow = null
+  })
+}
 
 function createWindow () {
   wteeWindows.mainWindow = new BrowserWindow({
-    transparent: true, // 透明
+    title: 'Writee',
+    // transparent: true, // 透明
     titleBarStyle: 'hiddenInset', // 无工具栏，但是有红绿灯，hidden边距小，hiddenInset边距大
     // frame: false, // 无边框、工具栏
     // backgroundColor: '#000',
     // alwaysOnTop: true, // 永远置顶，没看到效果？
     // webPreferences: {experimentalFeatures: true}, // 开启chrome试验功能
     useContentSize: true,
-    height: 768,
-    width: 1366
+    width: 1024,
+    height: 768
   })
   wteeWindows.mainWindow.loadURL(winURL)
   wteeWindows.mainWindow.on('closed', () => {
@@ -53,6 +67,21 @@ function reloadAllWindows () {
   })
 }
 
+function openWorkspace (workspace) {
+  if (!workspace) {
+    let ret = dialog.showOpenDialog(wteeWindows.mainWindow, {
+      defaultPath: '~',
+      properties: ['openDirectory']
+    })
+    if (!ret) return
+    workspace = ret[0]
+  }
+  global.sharedObject.workspace = workspace
+  // mainWindow.reload()
+  reloadAllWindows()
+}
+
+// ==========构建菜单==========
 async function createMenu (opt) {
   // ==========构建系统菜单==========
   const isMac = process.platform === 'darwin'
@@ -154,14 +183,7 @@ async function createMenu (opt) {
         {
           label: '打开',
           click: function () {
-            let ret = dialog.showOpenDialog(wteeWindows.mainWindow, {
-              defaultPath: '~',
-              properties: ['openDirectory']
-            })
-            if (!ret) return
-            global.sharedObject.workspace = ret[0]
-            // mainWindow.reload()
-            reloadAllWindows()
+            openWorkspace()
           }
         },
         {
@@ -287,13 +309,24 @@ async function createMenu (opt) {
   Menu.setApplicationMenu(Menu.buildFromTemplate(systemMenuJson))
 }
 
+// ==========构建菜单==========
+
+// ==========app事件监听==========
+app.on('open-file', (e, path) => {
+  console.log('open-file')
+  console.log(e)
+  console.log(path)
+})
+
 app.on('ready', () => {
-  createMenu()
-  createWindow()
+  // createMenu()
+  createWelcomeWindow()
+  // createWindow()
 })
 
 app.on('activate', () => {
-  if (wteeWindows.mainWindow === null) {
+  if (wteeWindows.mainWindow === null && wteeWindows.welcomeWindow === null) {
+    createWelcomeWindow()
     createWindow()
   }
 })
@@ -303,38 +336,22 @@ app.on('window-all-closed', () => {
     app.quit()
   }
 })
+// ==========app事件监听==========
 
 // ==========ipc事件定义==========
+// 刷新系统菜单
 ipcMain.on('refresh-app-menu', (event, openRecentSubmenuLi) => {
   createMenu({openRecentSubmenuLi: openRecentSubmenuLi})
+})
+// 打开工作空间
+ipcMain.on('open-workspace', (event, args) => {
+  console.log('on open-workspace', args)
+  openWorkspace(args)
 })
 // ==========ipc事件定义==========
 
 // 设置Dock小红点
 // app.setBadgeCount(app.getBadgeCount() + 9)
-
-// ==========构建菜单==========
-// const menu = new Menu()
-// menu.append(new MenuItem({
-//   label: 'aaa',
-//   type: 'checkbox',
-//   checked: true,
-//   click: () => {
-//     console.log('aaa is clicked')
-//   }
-// }))
-// menu.append(new MenuItem({ type: 'separator' }))
-// menu.append(new MenuItem({ label: 'selectall', role: 'selectall' }))
-// menu.append(new MenuItem({ label: 'copy', role: 'copy' }))
-// ipcMain.on('show-context-menu', (event) => {
-//   const win = BrowserWindow.fromWebContents(event.sender)
-//   menu.popup(win)
-// })
-// ==========构建菜单==========
-// ==========构建菜单：调用方式==========
-// 渲染进程
-// ipcRenderer.send('show-context-menu')
-// ==========构建菜单：调用方式==========
 
 /**
  * Auto Updater

@@ -6,7 +6,7 @@
 
 <script>
   export default {
-    name: 'writeee'
+    name: 'writee'
   }
 </script>
 
@@ -18,7 +18,7 @@
         margin: 0;
         user-select: none;
         font-size: @fontSizeTiny;
-        color: @myColorBlack;
+        color: @fontColorBlack;
         font-family: "MicrosoftYaHei";
     }
 

@@ -1,8 +1,6 @@
 // import db from '@/datastore'
 import fs from 'fs'
 
-const table = 'file'
-
 // 排序类型枚举
 const sortModeEnum = {
   TITLE: 'title',
@@ -68,7 +66,6 @@ export default {
   // sysSearchResMenu: sysSearchResMenu,
   // sysSourceMenu: sysSourceMenu,
 
-  table: table,
   sortMode: sortMode,
 
   findFiles: (path) => {
@@ -168,11 +165,11 @@ export default {
     return fs.readFileSync(path).toString()
   },
 
-  saveFile: (weeFile, content) => {
+  saveFile: (wteeFile, content) => {
     return new Promise((resolve, reject) => {
-      if (!weeFile) reject(new Error('参数错误'))
+      if (!wteeFile) reject(new Error('参数错误'))
       console.log('准备写入文件')
-      fs.writeFile(weeFile.path, content, function (err) {
+      fs.writeFile(wteeFile.path, content, function (err) {
         if (err) {
           console.error('err', err)
           reject(err)
@@ -184,12 +181,12 @@ export default {
     })
   },
 
-  renameFile: (weeFile) => {
+  renameFile: (wteeFile) => {
     return new Promise((resolve, reject) => {
-      if (!weeFile) reject(new Error('参数错误'))
-      let oldPath = weeFile.path
-      let newPath = oldPath.substring(0, oldPath.lastIndexOf('/') + 1) + weeFile.title + (weeFile.suffix ? '.' + weeFile.suffix : '')
-      weeFile.path = newPath
+      if (!wteeFile) reject(new Error('参数错误'))
+      let oldPath = wteeFile.path
+      let newPath = oldPath.substring(0, oldPath.lastIndexOf('/') + 1) + wteeFile.title + (wteeFile.suffix ? '.' + wteeFile.suffix : '')
+      wteeFile.path = newPath
       console.log('准备改名')
       console.log(oldPath)
       console.log(newPath)
@@ -202,6 +199,21 @@ export default {
         console.log('--------我是分割线-------------')
         resolve()
       })
+    })
+  },
+
+  /**
+   * 检查【路径】是否存在
+   * @param path
+   * @returns {boolean | *}
+   */
+  existsPath: (path) => {
+    return fs.existsSync(path)
+  },
+
+  mkdirSync: (path) => {
+    return fs.mkdirSync(path, {
+      recursive: true
     })
   }
 }

@@ -30,7 +30,7 @@
       // }
     },
     created () {
-      console.log('Setting created')
+      console.log(`${this.$options.name} created`)
     },
     methods: {
     }

@@ -103,7 +103,7 @@
       }
     },
     created () {
-      console.log('Component: BookList created')
+      console.log(`${this.$options.name} created`)
     },
     methods: {
       chooseThisBook (index, item) {

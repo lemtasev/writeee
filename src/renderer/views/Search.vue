@@ -70,7 +70,7 @@
       // }
     },
     created () {
-      console.log('Search created')
+      console.log(`${this.$options.name} created`)
       this.workspace = this.$electron.remote.getGlobal('sharedObject').workspace
     },
     methods: {

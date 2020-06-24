@@ -1,5 +1,5 @@
 {
-  "name": "writeee",
+  "name": "writee",
   "version": "0.0.1",
   "author": "yangqi <360104864@qq.com>",
   "description": "An electron-vue project",
@@ -22,8 +22,8 @@
     "postinstall": "npm run lint:fix"
   },
   "build": {
-    "productName": "writeee",
-    "appId": "com.yq.writeee",
+    "productName": "writee",
+    "appId": "com.yq.writee",
     "directories": {
       "output": "build"
     },

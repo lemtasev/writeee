@@ -64,6 +64,7 @@
   // import bookService from '@/service/BookService'
   import fileService from '@/service/FileService'
   import systemService from '@/service/SystemService'
+  import * as openHistoryService from '@/service/OpenHistoryService'
   import BookList from '@/components/BookList/BookList'
 
   export default {
@@ -94,7 +95,7 @@
       // }
     },
     created () {
-      console.log('Home created')
+      console.log(`${this.$options.name} created`)
       this.workspace = this.$electron.remote.getGlobal('sharedObject').workspace
       this.initHome(this.workspace)
     },
@@ -102,15 +103,8 @@
       async initHome (workspace) {
         if (!workspace) {
           // 选择最后打开的目录
-          let ret = await systemService.findOpenHistory()
-          let li = []
-          if (ret && ret.length > 0) {
-            li = ret[0].value
-          }
-          if (li && li.length > 0) {
-            workspace = li[li.length - 1]
-            this.workspace = workspace
-          }
+          workspace = await openHistoryService.getLatestOpenHistory()
+          this.workspace = workspace
         }
         if (!workspace) {
           return
@@ -119,40 +113,7 @@
         // 读目录
         this.findFiles(workspace)
         // 记录历史
-        this.saveOpenHistory(workspace)
-      },
-      deleteOpenHistory (path) {
-        systemService.findOpenHistory().then(ret => {
-          let li = []
-          if (ret && ret.length > 0) {
-            li = ret[0].value
-          }
-          if (li.includes(path)) {
-            li.splice(li.indexOf(path), 1)
-          }
-          return systemService.saveOpenHistory(li)
-        }).then(ret => {
-          console.log('==========saveUserSetting==========', ret)
-        })
-      },
-      async saveOpenHistory (path) {
-        let ret = await systemService.findOpenHistory()
-        let li = []
-        if (ret && ret.length > 0) {
-          li = ret[0].value
-        }
-        if (li.includes(path)) {
-          li.splice(li.indexOf(path), 1)
-        }
-        if (li.length >= 10) {
-          li.splice(0, 1)
-        }
-        li.push(path)
-        this.updateOpenHistoryMenu(li)
-        systemService.saveOpenHistory(li)
-      },
-      updateOpenHistoryMenu (li) {
-        this.$electron.ipcRenderer.send('refresh-app-menu', li)
+        openHistoryService.saveOpenHistory(workspace)
       },
       docModified (wteeFile, modified) {
         this.activeFileList.forEach((it, i) => {
@@ -280,7 +241,7 @@
         -webkit-app-region: drag;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 191, 255, 0.97);
+        background-color: @themeColor;
         display: flex;
         align-items: center;
         justify-content: flex-end;
@@ -305,14 +266,14 @@
     .left-menu {
         width: calc(100% - 1px);
         height: 100%;
-        border-right: 1px solid #ddd;
+        border-right: 1px solid @colorBorder;
         background-color: white;
         .menu-top {
             width: calc(100% - 40px);
             /*width: 100%;*/
             height: 69px;
             padding: 0 20px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid @colorBorder;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -332,7 +293,7 @@
                 /*border-top: 1px solid #eee;*/
                 display: inline-block;
                 .block-title {
-                    border-top: 1px solid #eee;
+                    border-top: 1px solid @colorBorder;
                     width: calc(100% - 20px);
                     padding: 4px 10px;
                     font-size: @fontSizeMicro;
@@ -349,7 +310,7 @@
             /*width: 100%;*/
             height: 29px;
             padding: 0 10px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid @colorBorder;
             display: flex;
             font-size: @fontSizeTiny;
             color: @wxColorGray;

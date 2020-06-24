@@ -71,6 +71,7 @@
       }
     },
     created () {
+      console.log(`${this.$options.name} created`)
       this.fileTypeEnum = fileService.fileTypeEnum
     },
     watch: {},
@@ -117,7 +118,7 @@
                 min-width: 120px;
                 padding: 0 10px;
                 height: 34px;
-                border-right: 1px solid #c9c9c9;
+                border-right: 1px solid @colorBorder;
                 cursor: default;
                 display: flex;
                 flex: none;
