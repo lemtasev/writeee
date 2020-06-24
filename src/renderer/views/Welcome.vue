@@ -99,10 +99,11 @@
     },
     methods: {
       chooseDirectory () {
-        let ret = this.$electron.remote.dialog.showOpenDialog(this.$electron.remote.getCurrentWindow(), {
+        let ret = this.$electron.remote.dialog.showOpenDialogSync(this.$electron.remote.getCurrentWindow(), {
           defaultPath: this.workspace,
           properties: ['openDirectory']
         })
+        console.log(ret)
         if (!ret) return
         this.workspace = ret[0]
       },

@@ -32,7 +32,10 @@ function createWelcomeWindow () {
     maximizable: false,
     useContentSize: true,
     width: 777,
-    height: 460
+    height: 460,
+    webPreferences: {
+      nodeIntegration: true // 在网页中集成Node
+    }
   })
   wteeWindows.welcomeWindow.loadURL(winURL + '#Welcome')
   wteeWindows.welcomeWindow.on('closed', () => {
@@ -47,11 +50,14 @@ function createWindow () {
     titleBarStyle: 'hiddenInset', // 无工具栏，但是有红绿灯，hidden边距小，hiddenInset边距大
     // frame: false, // 无边框、工具栏
     // backgroundColor: '#000',
-    // alwaysOnTop: true, // 永远置顶，没看到效果？
+    // alwaysOnTop: true, // 永远置顶
     // webPreferences: {experimentalFeatures: true}, // 开启chrome试验功能
     useContentSize: true,
     width: 1024,
-    height: 768
+    height: 768,
+    webPreferences: {
+      nodeIntegration: true // 在网页中集成Node
+    }
   })
   wteeWindows.mainWindow.loadURL(winURL)
   wteeWindows.mainWindow.on('closed', () => {
@@ -69,7 +75,7 @@ function reloadAllWindows () {
 
 function openWorkspace (workspace) {
   if (!workspace) {
-    let ret = dialog.showOpenDialog(wteeWindows.mainWindow, {
+    let ret = dialog.showOpenDialogSync(wteeWindows.mainWindow, {
       defaultPath: '~',
       properties: ['openDirectory']
     })
@@ -212,7 +218,10 @@ async function createMenu (opt) {
               // show: false,
               parent: wteeWindows.mainWindow,
               height: 800,
-              width: 800
+              width: 800,
+              webPreferences: {
+                nodeIntegration: true // 在网页中集成Node
+              }
             })
             wteeWindows.searchWin.loadURL(winURL + '#Search')
             wteeWindows.searchWin.once('ready-to-show', () => {
