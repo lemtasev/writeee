@@ -1,20 +1,18 @@
 <template>
-    <el-container style="height: 100%;">
+    <div class="home-container">
 
-        <el-header height="60px" style="padding: 0;">
-            <div class="head-box">
-                <span style="margin: 0 10px;">{{workspace}}</span>
+        <div class="home-header">
+            <span style="margin: 0 10px;">{{workspace}}</span>
 
-                <el-input v-model="settingKey" placeholder="settingKey" style="width: 100px;"></el-input>
-                <el-input v-model="settingValue" placeholder="settingValue" style="width: 100px;"></el-input>
-                <el-button @click="saveSetting">save</el-button>
-                <el-button @click="findSetting">find</el-button>
-            </div>
-        </el-header>
+            <!--<el-input v-model="settingKey" placeholder="settingKey" style="width: 100px;"></el-input>-->
+            <!--<el-input v-model="settingValue" placeholder="settingValue" style="width: 100px;"></el-input>-->
+            <!--<el-button @click="saveSetting">save</el-button>-->
+            <!--<el-button @click="findSetting">find</el-button>-->
+        </div>
 
-        <el-container>
+        <div class="home-body">
             <!--主目录-->
-            <el-aside class="resize-x" :width="asideWidthA + 'px'">
+            <div class="body-aside" :style="{'width': asideWidth + 'px'}">
                 <div class="left-menu">
 
                     <div class="menu-content">
@@ -43,17 +41,17 @@
 
                 </div>
                 <div class="resize-line" @mousedown="resize($event)" @dblclick="dblclick"></div>
-            </el-aside>
+            </div>
 
             <!--工作区-->
-            <el-main style="padding: 0;">
+            <div class="body-main" :style="{'width': 'calc(100% - ' + asideWidth + 'px)'}">
                 <MainTabs ref="MainTabs" :home="home" :activeFileList="activeFileList"
                           :activeFile="activeFile"></MainTabs>
-            </el-main>
+            </div>
 
-        </el-container>
+        </div>
 
-    </el-container>
+    </div>
 
 </template>
 
@@ -65,19 +63,19 @@
   import fileService from '@/service/FileService'
   import systemService from '@/service/SystemService'
   import * as openHistoryService from '@/service/OpenHistoryService'
-  import BookList from '@/components/BookList/BookList'
+  // import BookList from '@/components/BookList/BookList'
 
   export default {
     name: 'Home',
     components: {
-      BookList,
+      // BookList,
       MainTabs,
       TreeMenu
     },
     data () {
       return {
         home: this,
-        asideWidthA: 200,
+        asideWidth: 200,
 
         // workspace: '/Users/yangqi/work/myproject/electron-all-projects/workspace',
         workspace: '',
@@ -93,6 +91,12 @@
       // activeFile (v) {
       //   console.log('activeFile', v)
       // }
+      asideWidth (v) {
+        console.log('【automaticLayout: true】这个问题将在下一个monaco版本被修复', v)
+        setTimeout(() => {
+          this.$refs.MainTabs.$refs.MonacoEditor.layoutMonaco()
+        }, 0)
+      }
     },
     created () {
       console.log(`${this.$options.name} created`)
@@ -101,15 +105,15 @@
     },
     methods: {
       async initHome (workspace) {
-        if (!workspace) {
-          // 选择最后打开的目录
-          workspace = await openHistoryService.getLatestOpenHistory()
-          this.workspace = workspace
-        }
+        // if (!workspace) {
+        //   // 选择最后打开的目录
+        //   workspace = await openHistoryService.getLatestOpenHistory()
+        //   this.workspace = workspace
+        // }
         if (!workspace) {
           return
         }
-        this.$electron.remote.getGlobal('sharedObject').workspace = workspace
+        // this.$electron.remote.getGlobal('sharedObject').workspace = workspace
         // 读目录
         this.findFiles(workspace)
         // 记录历史
@@ -125,7 +129,7 @@
       },
       closeFile (index) {
         if (this.activeFileList[index].modified) {
-          let ret = this.$electron.remote.dialog.showMessageBox(this.$electron.remote.getCurrentWindow(), {
+          let ret = this.$electron.remote.dialog.showMessageBoxSync(this.$electron.remote.getCurrentWindow(), {
             message: '是否要保存对 ' + this.activeFileList[index].title + ' 的更改?',
             detail: '如果不保存，你的更改将丢失。',
             type: 'warning',
@@ -208,16 +212,16 @@
           this.files = ret
         })
       },
-      resize (e) {
-        let ox = e.clientX
+      resize (event) {
+        let ox = event.clientX
         let maxWidth = document.documentElement.clientWidth
         document.onmousemove = (e) => {
           let nx = e.clientX
           let offset = nx - ox
           ox = nx
-          let w = this.asideWidthA + offset
+          let w = this.asideWidth + offset
           if (w >= 200 && maxWidth - w >= 200) {
-            this.asideWidthA = w
+            this.asideWidth = w
           }
         }
         document.onmouseup = (e) => {
@@ -226,7 +230,7 @@
         }
       },
       dblclick () {
-        this.asideWidthA = 200
+        this.asideWidth = 200
       }
     }
   }
@@ -236,139 +240,111 @@
 
     @import '../common.less';
 
-    .head-box {
-        -webkit-user-select: none;
-        -webkit-app-region: drag;
+    .home-container{
         width: 100%;
         height: 100%;
-        background-color: @themeColor;
         display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        * {
-            -webkit-app-region: no-drag;
-        }
-    }
-
-    .resize-x {
-        position: relative;
-        .resize-line {
-            width: 6px;
-            height: 100%;
-            /*background-color: green;*/
-            position: absolute;
-            right: 0;
-            top: 0;
-            cursor: ew-resize;
-        }
-    }
-
-    .left-menu {
-        width: calc(100% - 1px);
-        height: 100%;
-        border-right: 1px solid @colorBorder;
-        background-color: white;
-        .menu-top {
-            width: calc(100% - 40px);
-            /*width: 100%;*/
-            height: 69px;
-            padding: 0 20px;
-            border-bottom: 1px solid @colorBorder;
+        flex-direction: column;
+        .home-header{
+            width: 100%;
+            height: 60px;
+            -webkit-user-select: none;
+            -webkit-app-region: drag;
+            background-color: @themeColor;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            /*.active-directory-title {*/
-            /*overflow: hidden;*/
-            /*text-overflow: ellipsis;*/
-            /*white-space: nowrap;*/
-            /*}*/
+            justify-content: flex-end;
+            * {
+                -webkit-app-region: no-drag;
+            }
         }
-        .menu-content {
+        .home-body{
             width: 100%;
-            height: calc(100% - 30px);
-            overflow: scroll;
-            .menu-inline-block {
-                min-width: 100%;
-                /*padding: 5px 0;*/
-                /*border-top: 1px solid #eee;*/
-                display: inline-block;
-                .block-title {
-                    border-top: 1px solid @colorBorder;
-                    width: calc(100% - 20px);
-                    padding: 4px 10px;
-                    font-size: @fontSizeMicro;
-                    color: @wxColorGray;
+            height: calc(100% - 60px);
+            display: flex;
+            .body-aside {
+                position: relative;
+                height: 100%;
+                .resize-line {
+                    width: 6px;
+                    height: 100%;
+                    position: absolute;
+                    right: 0;
+                    top: 0;
+                    cursor: ew-resize;
+                }
+                .left-menu {
+                    width: calc(100% - 1px);
+                    height: 100%;
+                    border-right: 1px solid @colorBorder;
+                    background-color: white;
+                    .menu-top {
+                        width: calc(100% - 40px);
+                        height: 69px;
+                        padding: 0 20px;
+                        border-bottom: 1px solid @colorBorder;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                    }
+                    .menu-content {
+                        width: 100%;
+                        height: calc(100% - 30px);
+                        overflow: scroll;
+                        .menu-inline-block {
+                            min-width: 100%;
+                            display: inline-block;
+                            .block-title {
+                                border-top: 1px solid @colorBorder;
+                                width: calc(100% - 20px);
+                                padding: 4px 10px;
+                                font-size: @fontSizeMicro;
+                                color: @wxColorGray;
+                            }
+                        }
+                        .no-workspace {
+                            width: 100%;
+                            height: 100%;
+                        }
+                    }
+                    .menu-bottom {
+                        width: calc(100% - 20px);
+                        height: 29px;
+                        padding: 0 10px;
+                        border-top: 1px solid @colorBorder;
+                        display: flex;
+                        font-size: @fontSizeTiny;
+                        color: @wxColorGray;
+                        align-items: center;
+                        justify-content: space-between;
+                        overflow: hidden;
+                        .menu-bottom-l {
+                            max-width: 100%;
+                            display: flex;
+                            align-items: center;
+                            white-space: nowrap;
+                        }
+                        .menu-bottom-m {
+                            max-width: 100%;
+                            display: flex;
+                            align-items: center;
+                            white-space: nowrap;
+                        }
+                        .menu-bottom-r {
+                            max-width: 100%;
+                            display: flex;
+                            align-items: center;
+                            white-space: nowrap;
+                        }
+                    }
                 }
             }
-            .no-workspace {
-                width: 100%;
+            .body-main{
                 height: 100%;
-            }
-        }
-        .menu-bottom {
-            width: calc(100% - 20px);
-            /*width: 100%;*/
-            height: 29px;
-            padding: 0 10px;
-            border-top: 1px solid @colorBorder;
-            display: flex;
-            font-size: @fontSizeTiny;
-            color: @wxColorGray;
-            align-items: center;
-            justify-content: space-between;
-            overflow: hidden;
-            .menu-bottom-l {
-                max-width: 100%;
-                display: flex;
-                align-items: center;
-                /*justify-content: center;*/
-                /*overflow: hidden;*/
-                /*text-overflow: ellipsis;*/
-                white-space: nowrap;
-            }
-            .menu-bottom-m {
-                max-width: 100%;
-                display: flex;
-                align-items: center;
-                /*justify-content: center;*/
-                /*overflow: hidden;*/
-                /*text-overflow: ellipsis;*/
-                white-space: nowrap;
-            }
-            .menu-bottom-r {
-                max-width: 100%;
-                display: flex;
-                align-items: center;
-                /*justify-content: center;*/
-                /*overflow: hidden;*/
-                /*text-overflow: ellipsis;*/
-                white-space: nowrap;
+                flex: auto;
+                background-color: #60d2f9;
             }
         }
     }
-
-    /*.book-info {*/
-    /*display: flex;*/
-    /*align-items: center;*/
-    /*!*justify-content: center;*!*/
-    /*padding: 10px;*/
-    /*-webkit-user-select: text;*/
-    /*}*/
-
-    /*.book-name {*/
-    /*display: flex;*/
-    /*align-items: center;*/
-    /*justify-content: center;*/
-    /*padding: 10px;*/
-    /*-webkit-user-select: text;*/
-    /*}*/
-
-    /*.book-name::before {*/
-    /*content: '《';*/
-    /*}*/
-
-    /*.book-name::after {*/
-    /*content: '》';*/
-    /*}*/
 
 </style>

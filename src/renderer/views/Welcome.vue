@@ -12,7 +12,7 @@
                         <div></div>
                         <span>{{item}}</span>
                         <div>
-                            <i class="el-icon-close" @click="deleteThis(i)"></i>
+                            <i class="el-icon-close" @click.stop="deleteThis(i)"></i>
                         </div>
                     </div>
                 </template>
@@ -83,7 +83,7 @@
 
       openHistoryService.getOpenHistory().then(ret => {
         console.log(ret)
-        this.openHistoryList = ret
+        this.openHistoryList = ret.reverse()
       })
 
       document.onkeydown = function (e) {
@@ -96,6 +96,8 @@
           that.goWorkspace()
         }
       }
+
+      this.$electron.ipcRenderer.send('refresh-app-menu', {original: true})
     },
     methods: {
       chooseDirectory () {
@@ -116,21 +118,27 @@
       confirmCreate () {
         console.log('confirmCreate', this.workspace)
         if (fileService.existsPath(this.workspace)) {
-          console.error('路径已被占用')
+          this.$electron.remote.dialog.showMessageBoxSync({
+            message: '路径已被占用',
+            detail: '请更改路径',
+            type: 'warning' // "none", "info", "error", "question", "warning"
+          })
         } else {
-          console.log('创建目录，打开目录')
-          let ret = fileService.mkdirSync(this.workspace)
-          console.log(ret)
+          console.log('创建目录，创建工作空间，打开目录')
+          fileService.createWorkspace(this.workspace)
+          this.$electron.remote.getCurrentWindow().close()
+          this.$electron.ipcRenderer.send('open-workspace', this.workspace)
         }
       },
       openWorkspace () {
-        this.$electron.ipcRenderer.send('open-workspace')
+        this.$electron.ipcRenderer.send('show-open')
       },
       goWorkspace (index) {
         index = index | this.activeIndex
         let item = this.openHistoryList[index]
         console.log(`goWorkspace【${item}】`)
         this.$electron.ipcRenderer.send('open-workspace', item)
+        this.$electron.remote.getCurrentWindow().close()
       },
       deleteThis (index) {
         let item = this.openHistoryList[index]

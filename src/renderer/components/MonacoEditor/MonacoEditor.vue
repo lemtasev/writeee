@@ -433,6 +433,9 @@
       // 字体
       setFontFamily (editor, family) {
         editor.updateOptions({fontFamily: family})
+      },
+      layoutMonaco () {
+        if (this.monacoEditor) this.monacoEditor.layout()
       }
     }
   }

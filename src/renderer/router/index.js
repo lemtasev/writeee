@@ -11,6 +11,11 @@ export default new Router({
       component: require('@/views/Home').default
     },
     {
+      path: '/Init',
+      name: '/Init',
+      component: require('@/views/Init').default
+    },
+    {
       path: '/Welcome',
       name: '/Welcome',
       component: require('@/views/Welcome').default

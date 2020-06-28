@@ -1,5 +1,6 @@
 // import db from '@/datastore'
 import fs from 'fs'
+import _path from 'path'
 
 // 排序类型枚举
 const sortModeEnum = {
@@ -28,43 +29,9 @@ const fileTypeEnum = {
   UNKNOWN: 'unknown' // 未知
 }
 
-// 系统搜索结果菜单
-// const sysSearchResMenu = {_id: '搜索结果', title: '搜索结果', type: menuTypeEnum.SYSTEM, isFolder: false, isActive: false}
-
-// 系统素材菜单
-// const sysSourceMenu = [
-//   {_id: '大纲', title: '大纲', type: menuTypeEnum.SYSTEM, parent: '-', isFolder: true, isOpen: false, isActive: false},
-//   {
-//     _id: '资料',
-//     title: '资料',
-//     type: menuTypeEnum.SYSTEM,
-//     parent: '-',
-//     isFolder: true,
-//     isOpen: false,
-//     isActive: false,
-//     hasChild: true,
-//     children: [
-//       {_id: '地点', title: '地点', type: menuTypeEnum.SYSTEM, parent: '资料', isFolder: true, isOpen: false, isActive: false},
-//       {_id: '人物', title: '人物', type: menuTypeEnum.SYSTEM, parent: '资料', isFolder: true, isOpen: false, isActive: false},
-//       {_id: '门派', title: '门派', type: menuTypeEnum.SYSTEM, parent: '资料', isFolder: true, isOpen: false, isActive: false},
-//       {_id: '道具', title: '道具', type: menuTypeEnum.SYSTEM, parent: '资料', isFolder: true, isOpen: false, isActive: false},
-//       {_id: '妖怪', title: '妖怪', type: menuTypeEnum.SYSTEM, parent: '资料', isFolder: true, isOpen: false, isActive: false},
-//       {_id: '招式心法', title: '招式心法', type: menuTypeEnum.SYSTEM, parent: '资料', isFolder: true, isOpen: false, isActive: false},
-//       {_id: '引用', title: '引用', type: menuTypeEnum.SYSTEM, parent: '资料', isFolder: true, isOpen: false, isActive: false}
-//     ]
-//   }
-// ]
-
-// 用户编辑默认菜单
-// const defaultBookDirectory = {table: table, bookId: null, title: '第一卷', type: menuTypeEnum.USER, parent: '-', isFolder: true, isOpen: false, isActive: false}
-
 export default {
 
-  // menuTypeEnum: menuTypeEnum,
   fileTypeEnum: fileTypeEnum,
-
-  // sysSearchResMenu: sysSearchResMenu,
-  // sysSourceMenu: sysSourceMenu,
 
   sortMode: sortMode,
 
@@ -91,7 +58,7 @@ export default {
             title: title,
             fileName: fileName,
             suffix: suffix,
-            path: path + '/' + fileName
+            path: _path.join(path, fileName)
           }
           let stats = fs.statSync(wteeFile.path)
           wteeFile.fileType = stats.isDirectory() ? fileTypeEnum.DIR : getFileType(suffix)
@@ -211,10 +178,41 @@ export default {
     return fs.existsSync(path)
   },
 
+  /**
+   * 创建路径文件夹
+   * @param path
+   * @returns {*|void}
+   */
   mkdirSync: (path) => {
     return fs.mkdirSync(path, {
       recursive: true
     })
+  },
+
+  /**
+   * 创建工作空间
+   * @param path
+   */
+  createWorkspace: (path) => {
+    fs.mkdirSync(path, {recursive: true})
+    fs.mkdirSync(_path.join(path, '正文'), {recursive: true})
+    fs.mkdirSync(_path.join(path, '大纲'), {recursive: true})
+    fs.mkdirSync(_path.join(path, '人物'), {recursive: true})
+    fs.mkdirSync(_path.join(path, '门派'), {recursive: true})
+    fs.mkdirSync(_path.join(path, '技能'), {recursive: true})
+    fs.mkdirSync(_path.join(path, '地点'), {recursive: true})
+    fs.mkdirSync(_path.join(path, '道具'), {recursive: true})
+    fs.mkdirSync(_path.join(path, '妖怪'), {recursive: true})
+    fs.mkdirSync(_path.join(path, '引用'), {recursive: true})
+  },
+
+  /**
+   * 初始化工作空间
+   * @param path
+   */
+  initWorkspace: (path) => {
+    let wteePath = _path.join(path, '.wtee')
+    fs.mkdirSync(wteePath, {recursive: true})
   }
 }
 

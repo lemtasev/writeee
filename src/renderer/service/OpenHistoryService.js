@@ -74,5 +74,5 @@ export async function getLatestOpenHistory () {
 }
 
 function updateOpenHistoryMenu (li) {
-  ipcRenderer.send('refresh-app-menu', li)
+  ipcRenderer.send('refresh-app-menu', {openRecentSubmenuLi: li})
 }
