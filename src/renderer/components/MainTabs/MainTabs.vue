@@ -3,7 +3,7 @@
 
         <div class="main-tabbar" ref="MainTabbar">
 
-            <template v-for="(item, i) in activeFileList" :index="i.toString()">
+            <template v-for="(item, i) in openedFileList" :index="i.toString()">
                 <div class="main-tabbar-li" :class="{'active' : item.active}" @click="clickTabbar(i)"
                      :title="item.path">
                     <div class="left">
@@ -37,7 +37,7 @@
 
         <div class="main-container">
 
-            <MonacoEditor ref="MonacoEditor" :home="home" :item="activeFile"></MonacoEditor>
+            <MonacoEditor ref="MonacoEditor" :home="home" :item="openedFile"></MonacoEditor>
 
         </div>
 
@@ -56,11 +56,11 @@
         type: Object,
         default: {}
       },
-      activeFileList: {
+      openedFileList: {
         type: Array,
         default: []
       },
-      activeFile: {
+      openedFile: {
         type: Object,
         default: {}
       }
@@ -77,7 +77,7 @@
     watch: {},
     methods: {
       clickTabbar (i) {
-        this.home.clickFile(this.activeFileList[i])
+        this.home.openFile(this.openedFileList[i])
       },
       closeTab (i) {
         this.home.closeFile(i)

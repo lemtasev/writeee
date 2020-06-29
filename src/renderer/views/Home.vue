@@ -45,8 +45,8 @@
 
             <!--工作区-->
             <div class="body-main" :style="{'width': 'calc(100% - ' + asideWidth + 'px)'}">
-                <MainTabs ref="MainTabs" :home="home" :activeFileList="activeFileList"
-                          :activeFile="activeFile"></MainTabs>
+                <MainTabs ref="MainTabs" :home="home" :openedFileList="openedFileList"
+                          :openedFile="openedFile"></MainTabs>
             </div>
 
         </div>
@@ -68,7 +68,6 @@
   export default {
     name: 'Home',
     components: {
-      // BookList,
       MainTabs,
       TreeMenu
     },
@@ -76,21 +75,18 @@
       return {
         home: this,
         asideWidth: 200,
-
-        // workspace: '/Users/yangqi/work/myproject/electron-all-projects/workspace',
         workspace: '',
+
         files: [],
-        activeFile: {},
-        activeFileList: [],
+        openedFile: {}, // 打开的文件
+        openedFileList: [], // 打开的文件列表
+        activeFile: {}, // 菜单激活的文件
 
         settingKey: '',
         settingValue: ''
       }
     },
     watch: {
-      // activeFile (v) {
-      //   console.log('activeFile', v)
-      // }
       asideWidth (v) {
         console.log('【automaticLayout: true】这个问题将在下一个monaco版本被修复', v)
         setTimeout(() => {
@@ -120,17 +116,17 @@
         openHistoryService.saveOpenHistory(workspace)
       },
       docModified (wteeFile, modified) {
-        this.activeFileList.forEach((it, i) => {
+        this.openedFileList.forEach((it, i) => {
           if (it.path === wteeFile.path) {
             it.modified = modified
-            this.$set(this.activeFileList, i, it)
+            this.$set(this.openedFileList, i, it)
           }
         })
       },
       closeFile (index) {
-        if (this.activeFileList[index].modified) {
+        if (this.openedFileList[index].modified) {
           let ret = this.$electron.remote.dialog.showMessageBoxSync(this.$electron.remote.getCurrentWindow(), {
-            message: '是否要保存对 ' + this.activeFileList[index].title + ' 的更改?',
+            message: '是否要保存对 ' + this.openedFileList[index].title + ' 的更改?',
             detail: '如果不保存，你的更改将丢失。',
             type: 'warning',
             buttons: ['保存', '取消', '不保存'],
@@ -143,10 +139,10 @@
           }
           if (ret === 0) {
             console.log('保存')
-            this.$refs.MainTabs.$refs.MonacoEditor.closeFileWithSave(this.activeFileList[index])
+            this.$refs.MainTabs.$refs.MonacoEditor.closeFileWithSave(this.openedFileList[index])
           } else if (ret === 2) {
             console.log('不保存')
-            this.$refs.MainTabs.$refs.MonacoEditor.closeFileWithoutSave(this.activeFileList[index])
+            this.$refs.MainTabs.$refs.MonacoEditor.closeFileWithoutSave(this.openedFileList[index])
           }
           this.removeActiveFileList(index)
           return
@@ -154,48 +150,52 @@
         this.removeActiveFileList(index)
       },
       removeActiveFileList (index) {
-        this.activeFileList.splice(index, 1)
+        this.openedFileList.splice(index, 1)
         let has = false
-        this.activeFileList.forEach((it, i) => {
+        this.openedFileList.forEach((it, i) => {
           if (it.active) {
             has = true
           }
         })
         if (has) return
-        if (this.activeFileList.length === 0) {
-          this.activeFile = {}
+        if (this.openedFileList.length === 0) {
+          this.openedFile = {}
           return
         }
-        let it = this.activeFileList[this.activeFileList.length - 1]
+        let it = this.openedFileList[this.openedFileList.length - 1]
         it.active = true
-        this.$set(this.activeFileList, this.activeFileList.length - 1, it)
-        this.activeFile = it
+        this.$set(this.openedFileList, this.openedFileList.length - 1, it)
+        this.openedFile = it
       },
       clickFile (wteeFile) {
-        if (wteeFile.fileType === fileService.fileTypeEnum.DIR) return
         this.activeFile = wteeFile
+      },
+      openFile (wteeFile) {
+        this.clickFile(wteeFile)
+        if (wteeFile.fileType === fileService.fileTypeEnum.DIR) return
         this.tryPushActiveFileList(wteeFile)
       },
       tryPushActiveFileList (wteeFile) {
+        this.openedFile = wteeFile
         let has = false
-        this.activeFileList.forEach((it, i) => {
+        this.openedFileList.forEach((it, i) => {
           if (it.path === wteeFile.path) {
             has = true
             it.active = true
-            this.$set(this.activeFileList, i, it)
+            this.$set(this.openedFileList, i, it)
             this.$refs.MainTabs.tabbarScrollTo(i)
           } else {
             it.active = false
-            this.$set(this.activeFileList, i, it)
+            this.$set(this.openedFileList, i, it)
           }
         })
         if (has) return
-        // if (this.activeFileList.length >= 2) {
-        //   this.activeFileList.splice(0, 1)
+        // if (this.openedFileList.length >= 2) {
+        //   this.openedFileList.splice(0, 1)
         // }
         wteeFile.active = true
-        this.activeFileList.push(wteeFile)
-        this.$refs.MainTabs.tabbarScrollTo(this.activeFileList.length - 1)
+        this.openedFileList.push(wteeFile)
+        this.$refs.MainTabs.tabbarScrollTo(this.openedFileList.length - 1)
       },
       saveSetting () {
         systemService.saveUserSetting(this.settingKey, this.settingValue).then(ret => {

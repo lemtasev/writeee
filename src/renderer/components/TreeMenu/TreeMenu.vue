@@ -7,7 +7,7 @@
              @contextmenu="contextmenuHandler">
 
             <!--三角标-->
-            <i class="menu-icon-dir" :style="{marginLeft: level * 20 + 'px'}"
+            <i class="menu-icon-dir" :style="{marginLeft: (level * 20) + 'px'}"
                :class="{'hidden' : !item.hasChild, 'el-icon-caret-bottom' : item.isOpen, 'el-icon-caret-right' : !item.isOpen}"
                @click="openOrClose"></i>
 
@@ -45,8 +45,8 @@
             <template v-for="(it, i) in item.children" :index="i.toString()">
                 <TreeMenu :item="it" :index="i" :level="level + 1" :home="home"></TreeMenu>
             </template>
-            <div v-show="!item.children" style="width: 100%;">
-                <i class="el-icon-loading"></i>
+            <div v-show="!item.children" style="width: calc(100% - 20px);padding: 0 10px;">
+                <i class="el-icon-loading" :style="{marginLeft: (level * 20) + 'px'}"></i>
             </div>
         </div>
 
@@ -121,7 +121,7 @@
       },
       dbclickFile () {
         if (this.item.hasChild) this.openOrClose()
-        this.clickFile()
+        this.home.openFile(this.item)
       },
       openOrClose () {
         this.$set(this.item, 'isOpen', !this.item.isOpen)

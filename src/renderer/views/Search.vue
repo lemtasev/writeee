@@ -33,7 +33,7 @@
         <div class="search-ope"></div>
 
         <div class="search-content">
-            <MonacoEditor ref="MonacoEditor" :item="activeFile" :home="home" :searchMode="true"></MonacoEditor>
+            <MonacoEditor ref="MonacoEditor" :item="openedFile" :home="home" :searchMode="true"></MonacoEditor>
         </div>
 
         <div class="search-ope"></div>
@@ -55,7 +55,7 @@
     data () {
       return {
         home: this,
-        activeFile: {},
+        openedFile: {}, // 打开的文件
         searchInfo: '',
         workspace: '',
         result: [],
@@ -65,9 +65,6 @@
       }
     },
     watch: {
-      // activeFile (v) {
-      //   console.log('activeFile', v)
-      // }
     },
     created () {
       console.log(`${this.$options.name} created`)
@@ -76,7 +73,7 @@
     methods: {
       clickResult (item) {
         this.activeOne(item)
-        this.activeFile = item
+        this.openedFile = item
       },
       activeOne (item) {
         this.result.forEach(it => {
@@ -86,7 +83,7 @@
       },
       startSearch () {
         console.log('stop old search')
-        this.activeFile = {}
+        this.openedFile = {}
         this.hasMore = false
         this.result = []
         this.resultFileCount = 0
