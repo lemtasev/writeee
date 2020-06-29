@@ -55,7 +55,11 @@
       console.log(`${this.$options.name} created`)
 
       this.initMenu(() => {
-        this.percentage += 100
+        this.percentage += 50
+      })
+
+      this.initWindows(() => {
+        this.percentage += 50
       })
     },
     methods: {
@@ -69,6 +73,10 @@
           this.workspace = li[li.length - 1]
         }
         this.$electron.ipcRenderer.send('refresh-app-menu', {original: true})
+        callback()
+      },
+      async initWindows (callback) {
+        // this.$electron.ipcRenderer.send('refresh-app-menu', {original: true})
         callback()
       }
     }

@@ -77,15 +77,8 @@
     created () {
       console.log(`${this.$options.name} created`)
       let that = this
-
       this.version = this.$electron.remote.getGlobal('sharedObject').version
-      this.workspace = this.$electron.remote.getGlobal('sharedObject').defaultWorkspacePath
-
-      openHistoryService.getOpenHistory().then(ret => {
-        console.log(ret)
-        this.openHistoryList = ret.reverse()
-      })
-
+      this.$electron.ipcRenderer.send('refresh-app-menu', {original: true})
       document.onkeydown = function (e) {
         if (that.activeIndex === 1) return
         if (e.key === 'ArrowUp') {
@@ -96,10 +89,19 @@
           that.goWorkspace()
         }
       }
-
-      this.$electron.ipcRenderer.send('refresh-app-menu', {original: true})
+    },
+    mounted () {
+      window.vueCmp = this
     },
     methods: {
+      onShow () {
+        console.log(`${this.$options.name} onShow`)
+        this.workspace = this.$electron.remote.getGlobal('sharedObject').defaultWorkspacePath
+        openHistoryService.getOpenHistory().then(ret => {
+          console.log(ret)
+          this.openHistoryList = ret.reverse()
+        })
+      },
       chooseDirectory () {
         let ret = this.$electron.remote.dialog.showOpenDialogSync(this.$electron.remote.getCurrentWindow(), {
           defaultPath: this.workspace,

@@ -68,9 +68,15 @@
     },
     created () {
       console.log(`${this.$options.name} created`)
-      this.workspace = this.$electron.remote.getGlobal('sharedObject').workspace
+    },
+    mounted () {
+      window.vueCmp = this
     },
     methods: {
+      onShow () {
+        console.log(`${this.$options.name} onShow`)
+        this.workspace = this.$electron.remote.getGlobal('sharedObject').workspace
+      },
       clickResult (item) {
         this.activeOne(item)
         this.openedFile = item

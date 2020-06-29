@@ -21,20 +21,19 @@ const winURL = process.env.NODE_ENV === 'development'
 let initWindow = null
 let welcomeWindow = null
 let mainWindow = null
-let wteeWindows = {
-  settingWin: null,
-  searchWin: null
-}
+let settingWindow = null
+let searchWindow = null
 
 function openSearchWindow () {
-  if (wteeWindows.searchWin != null) {
-    wteeWindows.searchWin.show()
+  if (searchWindow != null) {
+    searchWindow.show()
     return
   }
-  wteeWindows.searchWin = new BrowserWindow({
+  searchWindow = new BrowserWindow({
     modal: true,
     parent: mainWindow,
     title: '搜索',
+    backgroundColor: '#2e2c29',
     frame: false,
     alwaysOnTop: true,
     minimizable: false,
@@ -46,24 +45,28 @@ function openSearchWindow () {
       nodeIntegration: true // 在网页中集成Node
     }
   })
-  wteeWindows.searchWin.loadURL(winURL + '#Search')
-  wteeWindows.searchWin.on('blur', (e) => {
-    wteeWindows.searchWin.hide()
+  searchWindow.loadURL(winURL + '#Search')
+  searchWindow.on('blur', (e) => {
+    searchWindow.hide()
   })
-  wteeWindows.searchWin.on('closed', () => {
-    wteeWindows.searchWin = null
+  searchWindow.on('closed', () => {
+    searchWindow = null
+  })
+  searchWindow.on('show', () => {
+    searchWindow.webContents.executeJavaScript('this.vueCmp && this.vueCmp.onShow && this.vueCmp.onShow()')
   })
 }
 
 function openSettingWin () {
-  if (wteeWindows.settingWin != null) {
-    wteeWindows.settingWin.show()
+  if (settingWindow != null) {
+    settingWindow.show()
     return
   }
-  wteeWindows.settingWin = new BrowserWindow({
+  settingWindow = new BrowserWindow({
     modal: true,
     parent: mainWindow,
     title: '设置',
+    backgroundColor: '#2e2c29',
     alwaysOnTop: true,
     useContentSize: true,
     height: 768,
@@ -72,9 +75,12 @@ function openSettingWin () {
       nodeIntegration: true // 在网页中集成Node
     }
   })
-  wteeWindows.settingWin.loadURL(winURL + '#Setting')
-  wteeWindows.settingWin.on('closed', () => {
-    wteeWindows.settingWin = null
+  settingWindow.loadURL(winURL + '#Setting')
+  settingWindow.on('closed', () => {
+    settingWindow = null
+  })
+  settingWindow.on('show', () => {
+    settingWindow.webContents.executeJavaScript('this.vueCmp && this.vueCmp.onShow && this.vueCmp.onShow()')
   })
 }
 
@@ -85,6 +91,7 @@ function openInitWindow () {
   }
   initWindow = new BrowserWindow({
     title: 'Init',
+    backgroundColor: '#2e2c29',
     resizable: process.env.NODE_ENV === 'development',
     transparent: true, // 透明
     frame: false, // 无边框、工具栏
@@ -99,6 +106,9 @@ function openInitWindow () {
   initWindow.on('closed', () => {
     initWindow = null
   })
+  initWindow.on('show', () => {
+    initWindow.webContents.executeJavaScript('this.vueCmp && this.vueCmp.onShow && this.vueCmp.onShow()')
+  })
 }
 
 function openWelcomeWindow () {
@@ -108,6 +118,7 @@ function openWelcomeWindow () {
   }
   welcomeWindow = new BrowserWindow({
     title: 'Welcome to Writee',
+    backgroundColor: '#2e2c29',
     resizable: process.env.NODE_ENV === 'development',
     maximizable: false,
     useContentSize: true,
@@ -125,6 +136,9 @@ function openWelcomeWindow () {
   welcomeWindow.on('closed', () => {
     welcomeWindow = null
   })
+  welcomeWindow.on('show', () => {
+    welcomeWindow.webContents.executeJavaScript('this.vueCmp && this.vueCmp.onShow && this.vueCmp.onShow()')
+  })
 }
 
 function openMainWindow () {
@@ -137,7 +151,7 @@ function openMainWindow () {
     // transparent: true, // 透明
     titleBarStyle: 'hiddenInset', // 无工具栏，但是有红绿灯，hidden边距小，hiddenInset边距大
     // frame: false, // 无边框、工具栏
-    // backgroundColor: '#000',
+    backgroundColor: '#2e2c29',
     // alwaysOnTop: true, // 永远置顶
     useContentSize: true,
     show: false,
@@ -156,15 +170,18 @@ function openMainWindow () {
     mainWindow = null
     openWelcomeWindow()
   })
-}
-
-function reloadAllWindows () {
-  Object.keys(wteeWindows).forEach(key => {
-    if (wteeWindows[key] != null) {
-      wteeWindows[key].reload()
-    }
+  mainWindow.on('show', () => {
+    mainWindow.webContents.executeJavaScript('this.vueCmp && this.vueCmp.onShow && this.vueCmp.onShow()')
   })
 }
+
+// function reloadAllWindows () {
+//   Object.keys(wteeWindows).forEach(key => {
+//     if (wteeWindows[key] != null) {
+//       wteeWindows[key].reload()
+//     }
+//   })
+// }
 
 function showOpen () {
   let ret = dialog.showOpenDialogSync(mainWindow, {
@@ -179,9 +196,9 @@ function showOpen () {
     openMainWindow()
   }
   if (welcomeWindow != null) {
-    welcomeWindow.close()
+    welcomeWindow.hide()
   }
-  reloadAllWindows()
+  // reloadAllWindows()
 }
 
 // ==========构建菜单==========
@@ -200,7 +217,7 @@ async function createMenu (opt) {
           } else {
             openMainWindow()
           }
-          reloadAllWindows()
+          // reloadAllWindows()
         }
       })
     })

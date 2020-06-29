@@ -99,7 +99,13 @@
       this.workspace = this.$electron.remote.getGlobal('sharedObject').workspace
       this.initHome(this.workspace)
     },
+    mounted () {
+      window.vueCmp = this
+    },
     methods: {
+      onShow () {
+        console.log(`${this.$options.name} onShow`)
+      },
       async initHome (workspace) {
         // if (!workspace) {
         //   // 选择最后打开的目录
