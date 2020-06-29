@@ -140,102 +140,53 @@
         this.clickFile()
         if (this.item.fileType === fileService.fileTypeEnum.DIR) {
           this.contextMenu.userFolderContextMenu.popup({window: remote.getCurrentWindow()})
-        } else if (this.item.fileType === fileService.fileTypeEnum.CHAPTER) {
+        } else {
           this.contextMenu.userFileContextMenu.popup({window: remote.getCurrentWindow()})
         }
       },
       initContextMenu () {
         // ==========渲染进程通过remote模块构建动态菜单==========
-        // 搜索结果上下文菜单
-        let sysSearchResMenuContextMenuJson = [
+        let fileCommonContextMenu = [
           {
-            label: '清空',
+            label: '重命名',
             click: () => {
-              console.log('文件夹 is clicked')
+              console.log('重命名')
+              this.newTitle = this.item.title
+              this.renameStatus = true
+            }
+          },
+          {
+            label: '移动',
+            click: () => {
+              alert('todo')
+            }
+          },
+          {
+            label: '复制',
+            click: () => {
+              alert('todo')
+            }
+          },
+          {
+            label: '粘贴',
+            click: () => {
+              alert('todo')
+            }
+          },
+          {
+            label: '删除',
+            click: () => {
+              alert('todo')
+            }
+          },
+          {
+            label: '在系统中打开目录',
+            click: () => {
+              console.log('在系统中打开目录')
+              this.$electron.shell.showItemInFolder(this.item.path)
             }
           }
         ]
-        this.contextMenu.sysSearchResMenuContextMenu = remote.Menu.buildFromTemplate(sysSearchResMenuContextMenuJson)
-        // 大纲上下文菜单
-        let sysOutlineMenuContextMenuJson = [
-          {
-            label: '新增大纲',
-            click: () => {
-              console.log('文件夹 is clicked')
-            }
-          }
-        ]
-        this.contextMenu.sysOutlineMenuContextMenu = remote.Menu.buildFromTemplate(sysOutlineMenuContextMenuJson)
-        // 地点上下文菜单
-        let sysPlaceMenuContextMenuJson = [
-          {
-            label: '新增地点',
-            click: () => {
-              console.log('文件夹 is clicked')
-            }
-          }
-        ]
-        this.contextMenu.sysPlaceMenuContextMenu = remote.Menu.buildFromTemplate(sysPlaceMenuContextMenuJson)
-        // 人物上下文菜单
-        let sysCharacterMenuContextMenuJson = [
-          {
-            label: '新增人物',
-            click: () => {
-              console.log('文件夹 is clicked')
-            }
-          }
-        ]
-        this.contextMenu.sysCharacterMenuContextMenu = remote.Menu.buildFromTemplate(sysCharacterMenuContextMenuJson)
-        // 门派上下文菜单
-        let sysSectMenuContextMenuJson = [
-          {
-            label: '新增门派',
-            click: () => {
-              console.log('文件夹 is clicked')
-            }
-          }
-        ]
-        this.contextMenu.sysSectMenuContextMenu = remote.Menu.buildFromTemplate(sysSectMenuContextMenuJson)
-        // 道具上下文菜单
-        let sysPropsMenuContextMenuJson = [
-          {
-            label: '新增道具',
-            click: () => {
-              console.log('文件夹 is clicked')
-            }
-          }
-        ]
-        this.contextMenu.sysPropsMenuContextMenu = remote.Menu.buildFromTemplate(sysPropsMenuContextMenuJson)
-        // 妖怪上下文菜单
-        let sysMonsterMenuContextMenuJson = [
-          {
-            label: '新增妖怪',
-            click: () => {
-              console.log('文件夹 is clicked')
-            }
-          }
-        ]
-        this.contextMenu.sysMonsterMenuContextMenu = remote.Menu.buildFromTemplate(sysMonsterMenuContextMenuJson)
-        // 招式上下文菜单
-        let sysSkillMenuContextMenuJson = [
-          {
-            label: '新增招式',
-            click: () => {
-              console.log('文件夹 is clicked')
-            }
-          }
-        ]
-        this.contextMenu.sysSkillMenuContextMenu = remote.Menu.buildFromTemplate(sysSkillMenuContextMenuJson)
-        // 引用上下文菜单
-        let sysReferenceMenuContextMenuJson = [
-          {
-            label: '新增引用',
-            click: () => {
-              console.log('文件夹 is clicked')
-            }
-          }
-        ]
-        this.contextMenu.sysReferenceMenuContextMenu = remote.Menu.buildFromTemplate(sysReferenceMenuContextMenuJson)
         // 用户文件夹上下文菜单
         let userFolderContextMenuJson = [
           {
@@ -246,12 +197,14 @@
                 label: '章节',
                 click: () => {
                   console.log('新建 > 章节')
-                  console.log('this.item._id:', this.item)
-                  fileService.createFile(this.item.bookId, this.item._id, '测试', '测试内容').then(
-                    ret => {
-                      console.log('fileService.createFile ret', ret)
-                    }
-                  )
+                  console.log('this.item:', this.item)
+                  var ret = prompt('名称：')
+                  console.log(ret)
+                  // fileService.createFile(this.item.bookId, this.item._id, '测试', '测试内容').then(
+                  //   ret => {
+                  //     console.log('fileService.createFile ret', ret)
+                  //   }
+                  // )
                 }
               },
               {
@@ -262,104 +215,76 @@
                     ret => {
                       console.log('fileService.createDirectory ret', ret)
                       this.$set(this.item, 'hasChild', true)
-                      // this.item.hasChild = true
-                      // this.$forceUpdate()
                       fileService.updateDirectory(this.item)
                     }
                   )
+                }
+              },
+              {type: 'separator'},
+              {
+                label: '人物',
+                click: () => {
+                  console.log('文件夹 is clicked')
+                }
+              },
+              {
+                label: '地点',
+                click: () => {
+                  console.log('文件夹 is clicked')
+                }
+              },
+              {
+                label: '招式',
+                click: () => {
+                  console.log('文件夹 is clicked')
+                }
+              },
+              {
+                label: '妖怪',
+                click: () => {
+                  console.log('文件夹 is clicked')
+                }
+              },
+              {
+                label: '道具',
+                click: () => {
+                  console.log('文件夹 is clicked')
+                }
+              },
+              {
+                label: '门派',
+                click: () => {
+                  console.log('文件夹 is clicked')
+                }
+              },
+              {
+                label: '大纲',
+                click: () => {
+                  console.log('文件夹 is clicked')
+                }
+              },
+              {
+                label: '引用',
+                click: () => {
+                  console.log('文件夹 is clicked')
                 }
               }
             ]
           },
           {type: 'separator'},
-          {
-            label: '重命名',
-            click: () => {
-              console.log('重命名')
-              this.newTitle = this.item.title
-              this.renameStatus = true
-              // this.$refs.renameTitleRef.focus()
-            }
-          },
-          {
-            label: '移动',
-            click: () => {
-              alert('todo')
-            }
-          },
-          {
-            label: '复制',
-            click: () => {
-              alert('todo')
-            }
-          },
-          {
-            label: '粘贴',
-            click: () => {
-              alert('todo')
-            }
-          },
-          {
-            label: '删除',
-            click: () => {
-              alert('todo')
-            }
-          }
+          ...fileCommonContextMenu
         ]
         this.contextMenu.userFolderContextMenu = remote.Menu.buildFromTemplate(userFolderContextMenuJson)
         // 用户文件上下文菜单
         let userFileContextMenuJson = [
           {
-            label: '重命名',
-            click: () => {
-              console.log('重命名')
-              this.newTitle = this.item.title
-              this.renameStatus = true
-            }
-          },
-          {
-            label: '置顶',
-            click: () => {
-              console.log('文件夹 is clicked')
-            }
-          },
-          {
-            label: '取消置顶',
-            click: () => {
-              console.log('文件夹 is clicked')
-            }
-          },
-          {
-            label: '移动',
-            click: () => {
-              console.log('文件夹 is clicked')
-            }
-          },
-          {
-            label: '复制',
-            click: () => {
-              console.log('文件夹 is clicked')
-            }
-          },
-          {
-            label: '粘贴',
-            click: () => {
-              console.log('文件夹 is clicked')
-            }
-          },
-          {
-            label: '删除',
+            label: '打开',
             click: () => {
               console.log('文件夹 is clicked')
             }
           },
           {type: 'separator'},
-          {
-            label: '在新窗口打开',
-            click: () => {
-              console.log('文件夹 is clicked')
-            }
-          }
+          ...fileCommonContextMenu
         ]
         this.contextMenu.userFileContextMenu = remote.Menu.buildFromTemplate(userFileContextMenuJson)
         // ==========渲染进程通过remote模块构建动态菜单==========

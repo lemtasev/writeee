@@ -4,12 +4,12 @@ import _path from 'path'
 
 // 排序类型枚举
 const sortModeEnum = {
-  TITLE: 'title',
-  FILE_TYPE: 'fileType',
-  CREATE_TIME: 'createTime',
-  UPDATE_TIME: 'updateTime',
-  LATEST_ACCESSED_TIME: 'latestAccessedTime',
-  SIZE: 'size'
+  TITLE: 'title', // 名称
+  FILE_TYPE: 'fileType', // 类型
+  CREATE_TIME: 'createTime', // 创建时间
+  UPDATE_TIME: 'updateTime', // 更新时间
+  LATEST_ACCESSED_TIME: 'latestAccessedTime', // 上次访问时间
+  SIZE: 'size' // 大小
 }
 let sortMode = sortModeEnum.TITLE
 
@@ -216,6 +216,11 @@ export default {
   }
 }
 
+/**
+ * 通过后缀获取文件类型
+ * @param suffix
+ * @returns {string}
+ */
 function getFileType (suffix) {
   return suffix === fileTypeEnum.CHAPTER ? fileTypeEnum.CHAPTER
     : suffix === fileTypeEnum.IMG ? fileTypeEnum.IMG
