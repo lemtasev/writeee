@@ -43,7 +43,7 @@
 </template>
 
 <script>
-  import MonacoEditor from '../components/MonacoEditor/MonacoEditor'
+  import MonacoEditor from '@/components/MonacoEditor/MonacoEditor'
   import fileService from '@/service/FileService'
   import * as monaco from 'monaco-editor'
 
@@ -52,11 +52,19 @@
     components: {
       MonacoEditor
     },
+    props: {
+      home: {
+        type: Object,
+        default: {}
+      },
+      searchInfo: {
+        type: String,
+        default: ''
+      }
+    },
     data () {
       return {
-        home: this,
         openedFile: {}, // 打开的文件
-        searchInfo: '',
         workspace: '',
         result: [],
         resultFileCount: 0, // 文件个数
@@ -68,15 +76,9 @@
     },
     created () {
       console.log(`${this.$options.name} created`)
-    },
-    mounted () {
-      window.vueCmp = this
+      this.workspace = this.$electron.remote.getGlobal('sharedObject').workspace
     },
     methods: {
-      onShow () {
-        console.log(`${this.$options.name} onShow`)
-        this.workspace = this.$electron.remote.getGlobal('sharedObject').workspace
-      },
       clickResult (item) {
         this.activeOne(item)
         this.openedFile = item
@@ -235,7 +237,7 @@
 
 <style lang="less" scoped>
 
-    @import '../common.less';
+    @import '../../common.less';
 
     .search-box {
         width: 100%;
@@ -246,16 +248,11 @@
         align-items: center;
 
         .search-title-line{
-            -webkit-user-select: none;
-            -webkit-app-region: drag;
             width: 100%;
             height: 40px;
             background-color: #576b95;
             display: flex;
             align-items: center;
-            * {
-                -webkit-app-region: no-drag;
-            }
         }
 
         .search-line {

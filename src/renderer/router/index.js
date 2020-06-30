@@ -21,16 +21,6 @@ export default new Router({
       component: require('@/views/Welcome').default
     },
     {
-      path: '/Setting',
-      name: '/Setting',
-      component: require('@/views/Setting').default
-    },
-    {
-      path: '/Search',
-      name: '/Search',
-      component: require('@/views/Search').default
-    },
-    {
       path: '*',
       redirect: '/'
     }

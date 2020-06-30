@@ -53,32 +53,36 @@
     },
     created () {
       console.log(`${this.$options.name} created`)
+      let that = this
 
-      this.initMenu(() => {
-        this.percentage += 50
-      })
-
-      this.initWindows(() => {
-        this.percentage += 50
+      let missionArr = [
+        async function initMenu (callback) {
+          let ret = await systemService.findOpenHistory()
+          let li = []
+          if (ret && ret.length > 0) {
+            li = ret[0].value
+          }
+          if (li && li.length > 0) {
+            that.workspace = li[li.length - 1]
+          }
+          await that.$electron.ipcRenderer.send('refresh-app-menu', {original: true})
+          callback()
+        },
+        async function initSetting (callback) {
+          // todo 查询系统设置，储存到 sharedObject
+          callback()
+        }
+      ]
+      let length = missionArr.length
+      let per = Math.round(100 / length)
+      let firstPer = 100 - per * length + per
+      missionArr.forEach((fn, i) => {
+        fn(() => {
+          that.percentage += i === 0 ? firstPer : per
+        })
       })
     },
     methods: {
-      async initMenu (callback) {
-        let ret = await systemService.findOpenHistory()
-        let li = []
-        if (ret && ret.length > 0) {
-          li = ret[0].value
-        }
-        if (li && li.length > 0) {
-          this.workspace = li[li.length - 1]
-        }
-        this.$electron.ipcRenderer.send('refresh-app-menu', {original: true})
-        callback()
-      },
-      async initWindows (callback) {
-        // this.$electron.ipcRenderer.send('refresh-app-menu', {original: true})
-        callback()
-      }
     }
   }
 </script>
@@ -96,12 +100,12 @@
         justify-content: center;
         overflow: hidden;
         background-color: @themeColor;
-        .init-line{
+        .init-line {
             padding: 10px 0;
             width: 90%;
             color: white;
         }
-        .progress-box{
+        .progress-box {
             padding: 10px 0;
             width: 90%;
         }

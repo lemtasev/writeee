@@ -8,6 +8,11 @@
             <!--<el-input v-model="settingValue" placeholder="settingValue" style="width: 100px;"></el-input>-->
             <!--<el-button @click="saveSetting">save</el-button>-->
             <!--<el-button @click="findSetting">find</el-button>-->
+
+            <el-input v-model="search.searchInfo" size="mini" placeholder="全局搜索" style="width: 200px;margin-right: 10px;"
+                      @keyup.enter.native="openSearchPage">
+                <el-button slot="append" icon="el-icon-search" @click="openSearchPage"></el-button>
+            </el-input>
         </div>
 
         <div class="home-body">
@@ -51,6 +56,11 @@
 
         </div>
 
+        <!--搜索组件抽屉-->
+        <el-drawer :visible.sync="search.visible" direction="rtl" :show-close="false" :withHeader="false" size="700px">
+            <Search :home="home" :searchInfo="search.searchInfo"></Search>
+        </el-drawer>
+
     </div>
 
 </template>
@@ -63,13 +73,14 @@
   import fileService from '@/service/FileService'
   import systemService from '@/service/SystemService'
   import * as openHistoryService from '@/service/OpenHistoryService'
-  // import BookList from '@/components/BookList/BookList'
+  import Search from '@/components/Search/Search'
 
   export default {
     name: 'Home',
     components: {
       MainTabs,
-      TreeMenu
+      TreeMenu,
+      Search
     },
     data () {
       return {
@@ -81,6 +92,11 @@
         openedFile: {}, // 打开的文件
         openedFileList: [], // 打开的文件列表
         activeFile: {}, // 菜单激活的文件
+
+        search: {
+          visible: false,
+          searchInfo: ''
+        },
 
         settingKey: '',
         settingValue: ''
@@ -107,15 +123,9 @@
         console.log(`${this.$options.name} onShow`)
       },
       async initHome (workspace) {
-        // if (!workspace) {
-        //   // 选择最后打开的目录
-        //   workspace = await openHistoryService.getLatestOpenHistory()
-        //   this.workspace = workspace
-        // }
         if (!workspace) {
           return
         }
-        // this.$electron.remote.getGlobal('sharedObject').workspace = workspace
         // 读目录
         this.findFiles(workspace)
         // 记录历史
@@ -196,7 +206,7 @@
           }
         })
         if (has) return
-        // if (this.openedFileList.length >= 2) {
+        // if (this.openedFileList.length >= 5) {
         //   this.openedFileList.splice(0, 1)
         // }
         wteeFile.active = true
@@ -237,6 +247,10 @@
       },
       dblclick () {
         this.asideWidth = 200
+      },
+      openSearchPage () {
+        this.search.visible = true
+        console.log('openSearchPage', this.search.visible)
       }
     }
   }

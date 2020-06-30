@@ -143,4 +143,8 @@
     .font-size-tiny {
         font-size: @fontSizeTiny !important;
     }
+
+    .el-drawer {
+        outline: 0!important;
+    }
 </style>

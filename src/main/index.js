@@ -1,6 +1,5 @@
 'use strict'
 
-// import { app, BrowserWindow, Menu, Tray, clipboard, nativeImage, MenuItem, ipcMain } from 'electron'
 import {app, BrowserWindow, Menu, dialog, ipcMain} from 'electron'
 import path from 'path'
 import './sharedObject'
@@ -21,69 +20,11 @@ const winURL = process.env.NODE_ENV === 'development'
 let initWindow = null
 let welcomeWindow = null
 let mainWindow = null
-let settingWindow = null
-let searchWindow = null
 
-function openSearchWindow () {
-  if (searchWindow != null) {
-    searchWindow.show()
-    return
-  }
-  searchWindow = new BrowserWindow({
-    modal: true,
-    parent: mainWindow,
-    title: '搜索',
-    backgroundColor: '#2e2c29',
-    frame: false,
-    alwaysOnTop: true,
-    minimizable: false,
-    maximizable: false,
-    useContentSize: true,
-    height: 768,
-    width: 768,
-    webPreferences: {
-      nodeIntegration: true // 在网页中集成Node
-    }
-  })
-  searchWindow.loadURL(winURL + '#Search')
-  searchWindow.on('blur', (e) => {
-    searchWindow.hide()
-  })
-  searchWindow.on('closed', () => {
-    searchWindow = null
-  })
-  searchWindow.on('show', () => {
-    searchWindow.webContents.executeJavaScript('this.vueCmp && this.vueCmp.onShow && this.vueCmp.onShow()')
-  })
-}
-
-function openSettingWin () {
-  if (settingWindow != null) {
-    settingWindow.show()
-    return
-  }
-  settingWindow = new BrowserWindow({
-    modal: true,
-    parent: mainWindow,
-    title: '设置',
-    backgroundColor: '#2e2c29',
-    alwaysOnTop: true,
-    useContentSize: true,
-    height: 768,
-    width: 768,
-    webPreferences: {
-      nodeIntegration: true // 在网页中集成Node
-    }
-  })
-  settingWindow.loadURL(winURL + '#Setting')
-  settingWindow.on('closed', () => {
-    settingWindow = null
-  })
-  settingWindow.on('show', () => {
-    settingWindow.webContents.executeJavaScript('this.vueCmp && this.vueCmp.onShow && this.vueCmp.onShow()')
-  })
-}
-
+/**
+ * 初始化窗口
+ * @param callback
+ */
 function openInitWindow () {
   if (initWindow != null) {
     initWindow.show()
@@ -96,6 +37,7 @@ function openInitWindow () {
     transparent: true, // 透明
     frame: false, // 无边框、工具栏
     useContentSize: true,
+    show: false,
     width: 700,
     height: 200,
     webPreferences: {
@@ -103,19 +45,33 @@ function openInitWindow () {
     }
   })
   initWindow.loadURL(winURL + '#Init')
-  initWindow.on('closed', () => {
-    initWindow = null
+  initWindow.once('ready-to-show', () => {
+    initWindow.show()
   })
   initWindow.on('show', () => {
     initWindow.webContents.executeJavaScript('this.vueCmp && this.vueCmp.onShow && this.vueCmp.onShow()')
   })
+  initWindow.on('closed', () => {
+    initWindow = null
+  })
 }
 
+/**
+ * 打开欢迎窗口
+ */
 function openWelcomeWindow () {
   if (welcomeWindow != null) {
     welcomeWindow.show()
     return
   }
+  createWelcomeWindow()
+}
+
+/**
+ * 创建欢迎窗口
+ * @param callback
+ */
+function createWelcomeWindow () {
   welcomeWindow = new BrowserWindow({
     title: 'Welcome to Writee',
     backgroundColor: '#2e2c29',
@@ -133,19 +89,34 @@ function openWelcomeWindow () {
   welcomeWindow.once('ready-to-show', () => {
     welcomeWindow.show()
   })
-  welcomeWindow.on('closed', () => {
-    welcomeWindow = null
-  })
   welcomeWindow.on('show', () => {
     welcomeWindow.webContents.executeJavaScript('this.vueCmp && this.vueCmp.onShow && this.vueCmp.onShow()')
   })
+  welcomeWindow.on('close', (event) => {
+    // welcomeWindow.hide()
+    // event.preventDefault()
+  })
+  welcomeWindow.on('closed', () => {
+    welcomeWindow = null
+  })
 }
 
+/**
+ * 打开主窗口
+ */
 function openMainWindow () {
   if (mainWindow != null) {
     mainWindow.show()
     return
   }
+  createMainWindow()
+}
+
+/**
+ * 创建主窗口
+ * @param callback
+ */
+function createMainWindow () {
   mainWindow = new BrowserWindow({
     title: 'Writee',
     // transparent: true, // 透明
@@ -157,6 +128,8 @@ function openMainWindow () {
     show: false,
     width: 1024,
     height: 768,
+    minWidth: 333,
+    minHeight: 222,
     webPreferences: {
       // experimentalFeatures: true, // 开启chrome试验功能
       nodeIntegration: true // 在网页中集成Node
@@ -166,22 +139,18 @@ function openMainWindow () {
   mainWindow.once('ready-to-show', () => {
     mainWindow.show()
   })
-  mainWindow.on('closed', () => {
-    mainWindow = null
-    openWelcomeWindow()
-  })
   mainWindow.on('show', () => {
     mainWindow.webContents.executeJavaScript('this.vueCmp && this.vueCmp.onShow && this.vueCmp.onShow()')
   })
+  mainWindow.on('resize', () => {
+  })
+  mainWindow.on('close', () => {
+    openWelcomeWindow()
+  })
+  mainWindow.on('closed', () => {
+    mainWindow = null
+  })
 }
-
-// function reloadAllWindows () {
-//   Object.keys(wteeWindows).forEach(key => {
-//     if (wteeWindows[key] != null) {
-//       wteeWindows[key].reload()
-//     }
-//   })
-// }
 
 function showOpen () {
   let ret = dialog.showOpenDialogSync(mainWindow, {
@@ -198,7 +167,6 @@ function showOpen () {
   if (welcomeWindow != null) {
     welcomeWindow.hide()
   }
-  // reloadAllWindows()
 }
 
 // ==========构建菜单==========
@@ -242,7 +210,7 @@ async function createMenu (opt) {
           label: '偏好设置',
           // accelerator: 'CmdOrCtrl+R',
           click: function () {
-            openSettingWin()
+            // openSettingWin()
           }
         },
         {type: 'separator'},
@@ -302,7 +270,8 @@ async function createMenu (opt) {
               label: '搜索',
               accelerator: 'Ctrl+Shift+F',
               click: function () {
-                openSearchWindow()
+                // openSearchWindow()
+                mainWindow.webContents.executeJavaScript('this.vueCmp.openSearchPage()')
               }
             },
             {type: 'separator'},
@@ -385,24 +354,25 @@ async function createMenu (opt) {
 // ==========构建菜单==========
 
 // ==========app事件监听==========
-app.on('open-file', (e, path) => {
-  console.log('open-file')
-  console.log(e)
-  console.log(path)
-})
 app.on('ready', () => {
   openInitWindow()
+})
+app.on('window-all-closed', () => {
+  // if (process.platform !== 'darwin') {
+  //   app.quit()
+  // }
+  app.quit()
+})
+app.on('open-file', (e, path) => {
+  console.log('app on [open-file]')
+  console.log(e)
+  console.log(path)
 })
 app.on('activate', () => {
   if (mainWindow !== null) {
     openMainWindow()
   } else {
     openWelcomeWindow()
-  }
-})
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
   }
 })
 // ==========app事件监听==========
@@ -420,7 +390,6 @@ ipcMain.on('show-open', (event, args) => {
 ipcMain.on('open-workspace', (event, args) => {
   openMainWindow()
   global.sharedObject.workspace = args
-  mainWindow.reload()
 })
 // 打开welcome页面
 ipcMain.on('open-welcome-window', (event, args) => {
@@ -431,9 +400,6 @@ ipcMain.on('open-main-window', (event, args) => {
   openMainWindow()
 })
 // ==========ipc事件定义==========
-
-// 设置Dock小红点
-// app.setBadgeCount(app.getBadgeCount() + 9)
 
 /**
  * Auto Updater
