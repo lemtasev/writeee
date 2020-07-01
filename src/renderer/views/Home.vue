@@ -112,16 +112,30 @@
     },
     created () {
       console.log(`${this.$options.name} created`)
+      // ==========事件监听==========
+      this.$electron.ipcRenderer.on('ready-to-show', (event, args) => {
+        systemService.findUserSetting('mainWindowBounds').then(ret => {
+          if (ret && ret.length > 0) {
+            let bounds = ret[0].value
+            this.$electron.remote.getCurrentWindow().setBounds(bounds)
+          }
+          this.$electron.remote.getCurrentWindow().show()
+        })
+      })
+      this.$electron.ipcRenderer.on('resize', (event, args) => {
+        let bounds = this.$electron.remote.getCurrentWindow().getBounds()
+        systemService.saveUserSetting('mainWindowBounds', bounds)
+      })
+      this.$electron.ipcRenderer.on('open-search-page', (event, args) => {
+        this.openSearchPage()
+      })
+      // ==========事件监听==========
       this.workspace = this.$electron.remote.getGlobal('sharedObject').workspace
       this.initHome(this.workspace)
     },
     mounted () {
-      window.vueCmp = this
     },
     methods: {
-      onShow () {
-        console.log(`${this.$options.name} onShow`)
-      },
       async initHome (workspace) {
         if (!workspace) {
           return
@@ -250,7 +264,6 @@
       },
       openSearchPage () {
         this.search.visible = true
-        console.log('openSearchPage', this.search.visible)
       }
     }
   }

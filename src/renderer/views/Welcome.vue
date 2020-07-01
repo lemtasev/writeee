@@ -77,6 +77,11 @@
     created () {
       console.log(`${this.$options.name} created`)
       let that = this
+      // ==========事件监听==========
+      this.$electron.ipcRenderer.on('show', (event, args) => {
+        this.onShow()
+      })
+      // ==========事件监听==========
       this.version = this.$electron.remote.getGlobal('sharedObject').version
       this.$electron.ipcRenderer.send('refresh-app-menu', {original: true})
       document.onkeydown = function (e) {
@@ -91,7 +96,6 @@
       }
     },
     mounted () {
-      window.vueCmp = this
     },
     methods: {
       onShow () {

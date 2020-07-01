@@ -9,5 +9,6 @@ global.sharedObject = {
   userHomePath: userHomePath,
   defaultWorkspacePath: defaultWorkspacePath,
   dataBasePath: path.join(app.getPath('userData'), 'data.db'),
-  workspace: ''
+  workspace: '',
+  userSetting: {}
 }

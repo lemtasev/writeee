@@ -228,12 +228,12 @@
         scrollBeyondLastLine: false // 启用滚动可以在最后一行之后移动一个屏幕大小。默认为true。
       })
       this.monacoEditor.onDidChangeModelContent(e => {
-        console.log('onDidChangeModelContent', e)
+        // console.log('onDidChangeModelContent', e)
         this.content = this.monacoEditor.getValue()
         this.docModified(true)
       })
       this.monacoEditor.onDidChangeModel(e => {
-        console.log('onDidChangeModel', e)
+        // console.log('onDidChangeModel', e)
         this.cursorPosition = {column: 1, lineNumber: 1}
         if (this.viewState[this.item.path]) {
           this.monacoEditor.restoreViewState(this.viewState[this.item.path])
@@ -241,54 +241,19 @@
         }
       })
       this.monacoEditor.onDidBlurEditorText(_ => {
-        console.log('onDidBlurEditorText')
+        // console.log('onDidBlurEditorText')
         // this.saveContent()
       })
       this.monacoEditor.onDidChangeCursorPosition(e => {
-        console.log('onDidChangeCursorPosition', e)
+        // console.log('onDidChangeCursorPosition', e)
         this.cursorPosition = e.position
       })
       this.monacoEditor.onDidChangeCursorSelection(e => {
-        console.log('onDidChangeCursorSelection', e)
+        // console.log('onDidChangeCursorSelection', e)
         this.viewState[this.item.path] = this.monacoEditor.saveViewState()
-        // ==========content widget==========
-        // let contentWidget = {
-        //   updateInnerHtml: function (html) {
-        //     this.getDomNode().innerHTML = html
-        //   },
-        //   domNode: null,
-        //   getId: function () {
-        //     return 'my.content.widget'
-        //   },
-        //   getDomNode: function () {
-        //     if (!this.domNode) {
-        //       this.domNode = document.createElement('div')
-        //       this.domNode.innerHTML = 'My content widget'
-        //       this.domNode.style.background = 'grey'
-        //     }
-        //     return this.domNode
-        //   },
-        //   getPosition: function () {
-        //     return {
-        //       position: {
-        //         lineNumber: e.selection.endLineNumber,
-        //         column: e.selection.endColumn
-        //       },
-        //       preference: [monaco.editor.ContentWidgetPositionPreference.ABOVE, monaco.editor.ContentWidgetPositionPreference.BELOW]
-        //     }
-        //   }
-        // }
-        // this.monacoEditor.removeContentWidget(contentWidget)
-        // let selection = this.monacoEditor.getSelection()
-        // if (selection && !selection.isEmpty()) {
-        //   let selectionValue = this.monacoEditor.getModel().getValueInRange(selection)
-        //   contentWidget.updateInnerHtml(selectionValue)
-        //   this.monacoEditor.addContentWidget(contentWidget)
-        // }
-        // ==========content widget==========
       })
       this.monacoEditor.onDidScrollChange(e => {
-        console.log('onDidScrollChange', e)
+        // console.log('onDidScrollChange', e)
         this.viewState[this.item.path] = this.monacoEditor.saveViewState()
       })
       // ==========注册快捷键==========
@@ -300,18 +265,10 @@
         console.log('快捷键保存当前文件')
         that.saveContent()
       })
-      // this.monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_E, function () {
-      //   console.log('CtrlCmd+E')
-      //   that.monacoEditor.trigger('', 'editor.action.showHover', {})
-      // })
-      // this.monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_W, function () {
-      //   console.log('CtrlCmd+W')
-      //   that.monacoEditor.trigger('', 'editor.action.showDefinitionPreviewHover', {})
-      // })
       // ==========注册快捷键==========
-      console.log('All languages ==========', monaco.languages.getLanguages().map(it => {
-        return it.id
-      }))
+      // console.log('All languages ==========', monaco.languages.getLanguages().map(it => {
+      //   return it.id
+      // }))
     },
     methods: {
       closeFileWithoutSave (wteeFile) {

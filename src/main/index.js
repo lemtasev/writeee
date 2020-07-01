@@ -48,9 +48,6 @@ function openInitWindow () {
   initWindow.once('ready-to-show', () => {
     initWindow.show()
   })
-  initWindow.on('show', () => {
-    initWindow.webContents.executeJavaScript('this.vueCmp && this.vueCmp.onShow && this.vueCmp.onShow()')
-  })
   initWindow.on('closed', () => {
     initWindow = null
   })
@@ -90,7 +87,7 @@ function createWelcomeWindow () {
     welcomeWindow.show()
   })
   welcomeWindow.on('show', () => {
-    welcomeWindow.webContents.executeJavaScript('this.vueCmp && this.vueCmp.onShow && this.vueCmp.onShow()')
+    welcomeWindow.webContents.send('show')
   })
   welcomeWindow.on('close', (event) => {
     // welcomeWindow.hide()
@@ -137,12 +134,12 @@ function createMainWindow () {
   })
   mainWindow.loadURL(winURL)
   mainWindow.once('ready-to-show', () => {
-    mainWindow.show()
+    // mainWindow.show()
+    mainWindow.webContents.send('ready-to-show')
   })
-  mainWindow.on('show', () => {
-    mainWindow.webContents.executeJavaScript('this.vueCmp && this.vueCmp.onShow && this.vueCmp.onShow()')
-  })
+  mainWindow.on('show', () => {})
   mainWindow.on('resize', () => {
+    mainWindow.webContents.send('resize')
   })
   mainWindow.on('close', () => {
     openWelcomeWindow()
@@ -271,7 +268,7 @@ async function createMenu (opt) {
               accelerator: 'Ctrl+Shift+F',
               click: function () {
                 // openSearchWindow()
-                mainWindow.webContents.executeJavaScript('this.vueCmp.openSearchPage()')
+                mainWindow.webContents.send('open-search-page')
               }
             },
             {type: 'separator'},

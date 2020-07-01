@@ -3,6 +3,7 @@
     <div class="init-container">
 
         <div class="init-line">正在加载</div>
+        <div class="init-line">{{missionMessage}}</div>
 
         <div class="progress-box">
             <el-progress :percentage="percentage"
@@ -27,12 +28,14 @@
       return {
         percentage: 0,
         progressColor: '#2f6ade',
-        workspace: ''
+        workspace: '',
+        missionMessage: ''
       }
     },
     watch: {
       percentage (v) {
         console.log('percentage', v)
+        this.$electron.remote.getCurrentWindow().setProgressBar(v / 100) // 任务栏进度条
         if (v === 100) {
           console.log('init ready')
           console.log('workspace', this.workspace)
@@ -47,6 +50,7 @@
             }
             // close this page
             this.$electron.remote.getCurrentWindow().close()
+            this.$electron.remote.getCurrentWindow().setProgressBar(-1) // 任务栏进度条
           }, 1000)
         }
       }
@@ -56,29 +60,46 @@
       let that = this
 
       let missionArr = [
-        async function initMenu (callback) {
-          let ret = await systemService.findOpenHistory()
-          let li = []
-          if (ret && ret.length > 0) {
-            li = ret[0].value
-          }
-          if (li && li.length > 0) {
-            that.workspace = li[li.length - 1]
-          }
-          await that.$electron.ipcRenderer.send('refresh-app-menu', {original: true})
-          callback()
+        async function (callback) {
+          let missionName = '初始化菜单'
+          that.missionMessage = `正在【${missionName}】`
+          systemService.findOpenHistory().then(ret => {
+            let li = []
+            if (ret && ret.length > 0) {
+              li = ret[0].value
+            }
+            if (li && li.length > 0) {
+              that.workspace = li[li.length - 1]
+            }
+            that.$electron.ipcRenderer.send('refresh-app-menu', {original: true})
+            callback(missionName)
+          })
         },
-        async function initSetting (callback) {
+        async function (callback) {
+          let missionName = '初始化系统设置'
+          that.missionMessage = `正在【${missionName}】`
           // todo 查询系统设置，储存到 sharedObject
-          callback()
+          systemService.findUserSetting('userSetting').then(ret => {
+            let value
+            if (ret && ret.length > 0) {
+              value = ret[0].value
+            }
+            if (!value) {
+              value = require('@/defaultSetting.js').default.defaultSetting
+            }
+            console.log(value)
+            that.$electron.remote.getGlobal('sharedObject').userSetting = value
+            callback(missionName)
+          })
         }
       ]
       let length = missionArr.length
       let per = Math.round(100 / length)
       let firstPer = 100 - per * length + per
       missionArr.forEach((fn, i) => {
-        fn(() => {
+        fn((missionName) => {
           that.percentage += i === 0 ? firstPer : per
+          that.missionMessage = `【${missionName}】完成`
         })
       })
     },
