@@ -258,7 +258,7 @@
             transition: all 0.3s;
             .wc-box-create-top {
                 width: 100%;
-                height: 100px;
+                height: 60px;
                 background-color: @themeColor;
                 display: flex;
                 align-items: center;
@@ -266,7 +266,7 @@
             }
             .wc-box-create-bottom {
                 width: 100%;
-                height: calc(100% - 100px);
+                height: calc(100% - 60px);
                 background-color: @themeColor20;
             }
         }

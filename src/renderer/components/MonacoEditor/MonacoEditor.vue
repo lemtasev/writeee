@@ -84,8 +84,8 @@
         langName: 'wtee',
         monacoEditor: null,
         editorOptions: {
-          lineNumbers: true,
-          minimap: true
+          lineNumbers: false,
+          minimap: false
         },
 
         content: '',
@@ -167,6 +167,7 @@
     },
     mounted () {
       console.log('mounted')
+      this.editorOptions = this.$electron.remote.getGlobal('sharedObject').userSetting.editor
       let that = this
       let langName = this.langName
       // ==========初始化wtee主题==========

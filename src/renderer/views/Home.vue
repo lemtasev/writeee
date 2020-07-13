@@ -2,17 +2,19 @@
     <div class="home-container">
 
         <div class="home-header">
-            <span style="margin: 0 10px;">{{workspace}}</span>
+            <span class="mr-10">{{workspace}}</span>
 
             <!--<el-input v-model="settingKey" placeholder="settingKey" style="width: 100px;"></el-input>-->
             <!--<el-input v-model="settingValue" placeholder="settingValue" style="width: 100px;"></el-input>-->
             <!--<el-button @click="saveSetting">save</el-button>-->
             <!--<el-button @click="findSetting">find</el-button>-->
 
-            <el-input v-model="search.searchInfo" size="mini" placeholder="全局搜索" style="width: 200px;margin-right: 10px;"
+            <el-input v-model="search.searchInfo" size="mini" placeholder="全局搜索" class="mr-10" style="width: 200px;"
                       @keyup.enter.native="openSearchPage">
                 <el-button slot="append" icon="el-icon-search" @click="openSearchPage"></el-button>
             </el-input>
+
+            <el-button class="mr-10" icon="el-icon-setting" size="mini" @click="openSettingPage"></el-button>
         </div>
 
         <div class="home-body">
@@ -61,6 +63,11 @@
             <Search :home="home" :searchInfo="search.searchInfo"></Search>
         </el-drawer>
 
+        <!--设置组件抽屉-->
+        <el-drawer ref="SettingRef" :visible.sync="setting.visible" direction="ttb" :show-close="false" :withHeader="false" size="100%">
+            <Setting :home="home"></Setting>
+        </el-drawer>
+
     </div>
 
 </template>
@@ -74,13 +81,15 @@
   import systemService from '@/service/SystemService'
   import * as openHistoryService from '@/service/OpenHistoryService'
   import Search from '@/components/Search/Search'
+  import Setting from '@/components/Setting/Setting'
 
   export default {
     name: 'Home',
     components: {
       MainTabs,
       TreeMenu,
-      Search
+      Search,
+      Setting
     },
     data () {
       return {
@@ -96,6 +105,9 @@
         search: {
           visible: false,
           searchInfo: ''
+        },
+        setting: {
+          visible: false
         },
 
         settingKey: '',
@@ -264,6 +276,9 @@
       },
       openSearchPage () {
         this.search.visible = true
+      },
+      openSettingPage () {
+        this.setting.visible = true
       }
     }
   }

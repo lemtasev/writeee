@@ -60,6 +60,7 @@
     "element-ui": "^2.13.1",
     "less": "^3.11.1",
     "less-loader": "^5.0.0",
+    "merge": "^1.2.1",
     "moment": "^2.25.3",
     "monaco-editor": "^0.20.0",
     "nedb": "^1.8.0",

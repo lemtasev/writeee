@@ -92,6 +92,10 @@
         margin-top: 80px !important;
     }
 
+    .mr-10 {
+        margin-right: 10px !important;
+    }
+
     .jc-c {
         justify-content: center !important;
     }
@@ -145,6 +149,6 @@
     }
 
     .el-drawer {
-        outline: 0!important;
+        outline: 0 !important;
     }
 </style>

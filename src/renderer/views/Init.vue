@@ -18,6 +18,7 @@
 <script>
   import systemService from '@/service/SystemService'
   // import * as openHistoryService from '@/service/OpenHistoryService'
+  import merge from 'merge'
 
   export default {
     name: 'Init',
@@ -80,15 +81,14 @@
           that.missionMessage = `正在【${missionName}】`
           // todo 查询系统设置，储存到 sharedObject
           systemService.findUserSetting('userSetting').then(ret => {
-            let value
+            let userSetting
             if (ret && ret.length > 0) {
-              value = ret[0].value
+              userSetting = ret[0].value
             }
-            if (!value) {
-              value = require('@/defaultSetting.js').default.defaultSetting
-            }
-            console.log(value)
-            that.$electron.remote.getGlobal('sharedObject').userSetting = value
+            let defaultSetting = require('@/defaultSetting.js').default.defaultSetting
+            userSetting = merge(defaultSetting, userSetting)
+            console.log(userSetting)
+            that.$electron.remote.getGlobal('sharedObject').userSetting = userSetting
             callback(missionName)
           })
         }
