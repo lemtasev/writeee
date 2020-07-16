@@ -64,7 +64,8 @@
         </el-drawer>
 
         <!--设置组件抽屉-->
-        <el-drawer ref="SettingRef" :visible.sync="setting.visible" direction="ttb" :show-close="false" :withHeader="false" size="100%">
+        <el-drawer custom-class="setting-drawer" ref="SettingRef" :visible.sync="setting.visible" direction="ttb"
+                   :show-close="false" :withHeader="false" size="100%">
             <Setting :home="home"></Setting>
         </el-drawer>
 
@@ -288,12 +289,12 @@
 
     @import '../common.less';
 
-    .home-container{
+    .home-container {
         width: 100%;
         height: 100%;
         display: flex;
         flex-direction: column;
-        .home-header{
+        .home-header {
             width: 100%;
             height: 60px;
             -webkit-user-select: none;
@@ -306,7 +307,7 @@
                 -webkit-app-region: no-drag;
             }
         }
-        .home-body{
+        .home-body {
             width: 100%;
             height: calc(100% - 60px);
             display: flex;
@@ -387,7 +388,7 @@
                     }
                 }
             }
-            .body-main{
+            .body-main {
                 height: 100%;
                 flex: auto;
                 background-color: #60d2f9;

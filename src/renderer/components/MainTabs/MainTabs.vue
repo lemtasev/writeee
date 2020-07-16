@@ -4,8 +4,9 @@
         <div class="main-tabbar" ref="MainTabbar">
 
             <template v-for="(item, i) in openedFileList" :index="i.toString()">
-                <div class="main-tabbar-li" :class="{'active' : item.active}" @click="clickTabbar(i)"
-                     :title="item.path">
+                <div class="main-tabbar-li" :class="{'active' : item.active}" :title="item.path"
+                     @click="clickTabbar(i)"
+                     @contextmenu="tabbarContextMenu(i)">
                     <div class="left">
                         <i v-show="item.modified" class="modified-flag"></i>
 
@@ -76,6 +77,61 @@
     },
     watch: {},
     methods: {
+      tabbarContextMenu (i) {
+        let userFolderContextMenuJson = [
+          {
+            label: '关闭',
+            click: () => {
+              this.closeTab(i)
+            }
+          },
+          {
+            label: '关闭其他',
+            click: () => {
+              let len = this.openedFileList.length
+              for (let j = 0; j < len; j++) {
+                if (j < i) {
+                  this.closeTab(0)
+                } else if (j > i) {
+                  this.closeTab(1)
+                }
+              }
+            }
+          },
+          {
+            label: '关闭全部',
+            click: () => {
+              let len = this.openedFileList.length
+              for (let j = 0; j < len; j++) {
+                this.closeTab(0)
+              }
+            }
+          },
+          {
+            label: '关闭未修改文件',
+            click: () => {
+              let len = this.openedFileList.length
+              let delIdx = 0
+              for (let j = 0; j < len; j++) {
+                if (!this.openedFileList[delIdx].modified) {
+                  this.closeTab(delIdx)
+                } else {
+                  delIdx++
+                }
+              }
+            }
+          },
+          {type: 'separator'},
+          {
+            label: '在文件夹中显示',
+            click: () => {
+              this.$electron.shell.showItemInFolder(this.openedFileList[i].path)
+            }
+          }
+        ]
+        let contextMenu = this.$electron.remote.Menu.buildFromTemplate(userFolderContextMenuJson)
+        contextMenu.popup({window: this.$electron.remote.getCurrentWindow()})
+      },
       clickTabbar (i) {
         this.home.openFile(this.openedFileList[i])
       },

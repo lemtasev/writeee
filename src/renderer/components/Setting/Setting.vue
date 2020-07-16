@@ -9,28 +9,104 @@
         </div>
         <div class="setting-box-bottom">
             <div class="setting-nav">
-                nav
+                <ul>
+                    <li><a href="#general">常规</a></li>
+                    <li><a href="#editor">编辑器</a></li>
+                    <li><a href="#editor2">编辑器2</a></li>
+                    <li><a href="#editor3">编辑器3</a></li>
+                    <li><a href="#editor4">编辑器4</a></li>
+                    <li><a href="#editor5">编辑器5</a></li>
+                    <li><a href="#editor6">编辑器6</a></li>
+                    <li><a href="#editor7">编辑器7</a></li>
+                    <li><a href="#editor8">编辑器8</a></li>
+                </ul>
             </div>
             <div class="setting-content">
                 <el-form class="setting-form" size="mini" label-position="left" label-width="auto">
 
-                    <div class="split-line">常规</div>
-
+                    <div class="split-line" id="general">常规</div>
+                    <el-form-item>
+                        <el-checkbox v-model="userSetting.general.darkTheme">黑暗主题</el-checkbox>
+                    </el-form-item>
                     <el-form-item label="位置">
                         <!--<el-input placeholder="请选择或输入一个目录" v-model="workspace">-->
                             <!--<el-button slot="append" icon="el-icon-folder-opened" @click="chooseDirectory"></el-button>-->
                         <!--</el-input>-->
                     </el-form-item>
 
-                    <div class="split-line">编辑器</div>
-
+                    <div class="split-line" id="editor">编辑器</div>
+                    <el-form-item label="字体大小">
+                        <el-input v-model="userSetting.editor.fontSize"></el-input>
+                    </el-form-item>
+                    <el-form-item label="行高">
+                        <el-input v-model="userSetting.editor.lineHeight"></el-input>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-checkbox v-model="userSetting.editor.wordWrap">自动换行</el-checkbox>
+                    </el-form-item>
                     <el-form-item>
                         <el-checkbox v-model="userSetting.editor.lineNumbers">显示段落号</el-checkbox>
                     </el-form-item>
-
                     <el-form-item>
                         <el-checkbox v-model="userSetting.editor.minimap">显示预览小地图</el-checkbox>
                     </el-form-item>
+
+                    <div class="split-line" id="editor2">编辑器2</div>
+                    <el-form-item>
+                        <el-checkbox v-model="userSetting.editor.lineNumbers">显示段落号</el-checkbox>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-checkbox v-model="userSetting.editor.minimap">显示预览小地图</el-checkbox>
+                    </el-form-item>
+
+                    <div class="split-line" id="editor3">编辑器3</div>
+                    <el-form-item>
+                        <el-checkbox v-model="userSetting.editor.lineNumbers">显示段落号</el-checkbox>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-checkbox v-model="userSetting.editor.minimap">显示预览小地图</el-checkbox>
+                    </el-form-item>
+
+                    <div class="split-line" id="editor4">编辑器4</div>
+                    <el-form-item>
+                        <el-checkbox v-model="userSetting.editor.lineNumbers">显示段落号</el-checkbox>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-checkbox v-model="userSetting.editor.minimap">显示预览小地图</el-checkbox>
+                    </el-form-item>
+
+                    <div class="split-line" id="editor5">编辑器5</div>
+                    <el-form-item>
+                        <el-checkbox v-model="userSetting.editor.lineNumbers">显示段落号</el-checkbox>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-checkbox v-model="userSetting.editor.minimap">显示预览小地图</el-checkbox>
+                    </el-form-item>
+
+                    <div class="split-line" id="editor6">编辑器6</div>
+                    <el-form-item>
+                        <el-checkbox v-model="userSetting.editor.lineNumbers">显示段落号</el-checkbox>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-checkbox v-model="userSetting.editor.minimap">显示预览小地图</el-checkbox>
+                    </el-form-item>
+
+                    <div class="split-line" id="editor7">编辑器7</div>
+                    <el-form-item>
+                        <el-checkbox v-model="userSetting.editor.lineNumbers">显示段落号</el-checkbox>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-checkbox v-model="userSetting.editor.minimap">显示预览小地图</el-checkbox>
+                    </el-form-item>
+
+                    <div class="split-line" id="editor8">编辑器8</div>
+                    <el-form-item>
+                        <el-checkbox v-model="userSetting.editor.lineNumbers">显示段落号</el-checkbox>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-checkbox v-model="userSetting.editor.minimap">显示预览小地图</el-checkbox>
+                    </el-form-item>
+
 
                 </el-form>
             </div>
@@ -43,6 +119,7 @@
   // import redis from 'redis'
   // import bookService from '@/service/BookService'
   // import fileService from '@/service/FileService'
+  import defaultSetting from '@/defaultSetting'
 
   export default {
     name: 'Setting',
@@ -54,12 +131,7 @@
     },
     data () {
       return {
-        userSetting: {
-          editor: {
-            lineNumbers: true, // 是否显示段落号
-            minimap: true // 是否显示预览小地图
-          }
-        }
+        userSetting: defaultSetting.defaultSetting
       }
     },
     beforeCreate () {

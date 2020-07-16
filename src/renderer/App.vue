@@ -148,7 +148,14 @@
         font-size: @fontSizeTiny !important;
     }
 
+    /*==========自定义element UI样式==========*/
     .el-drawer {
         outline: 0 !important;
     }
+
+    .setting-drawer > section {
+        height: 100%;
+    }
+
+    /*==========自定义element UI样式==========*/
 </style>

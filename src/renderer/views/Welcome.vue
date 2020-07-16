@@ -18,7 +18,7 @@
                 </template>
             </div>
             <div class="wc-right">
-                <img class="wc-logo" src="../assets/icon.jpg"/>
+                <img class="wc-logo" src="../../../static/icon.jpg"/>
                 <span>Version: {{version}}</span>
                 <div class="wc-ope-line mt-40" @click="startCreate">
                     <i class="el-icon-plus"></i>

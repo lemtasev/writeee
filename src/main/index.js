@@ -1,6 +1,6 @@
 'use strict'
 
-import {app, BrowserWindow, Menu, dialog, ipcMain} from 'electron'
+import {app, BrowserWindow, Menu, dialog, ipcMain, Tray, nativeImage} from 'electron'
 import path from 'path'
 import './sharedObject'
 // import systemService from './SystemService'
@@ -16,6 +16,8 @@ if (process.env.NODE_ENV !== 'development') {
 const winURL = process.env.NODE_ENV === 'development'
   ? `http://localhost:9080`
   : `file://${__dirname}/index.html`
+
+let baseIcon = nativeImage.createFromPath(path.join(__static, '/icon.jpg'))
 
 let initWindow = null
 let welcomeWindow = null
@@ -137,12 +139,13 @@ function createMainWindow () {
     // mainWindow.show()
     mainWindow.webContents.send('ready-to-show')
   })
-  mainWindow.on('show', () => {})
+  mainWindow.on('show', () => {
+  })
   mainWindow.on('resize', () => {
     mainWindow.webContents.send('resize')
   })
   mainWindow.on('close', () => {
-    openWelcomeWindow()
+    // openWelcomeWindow()
   })
   mainWindow.on('closed', () => {
     mainWindow = null
@@ -350,15 +353,37 @@ async function createMenu (opt) {
 
 // ==========构建菜单==========
 
+// ==========构建系统托盘图标==========
+let tray = null
+
+function createTray () {
+  let trayIcon = baseIcon.resize({width: 15, height: 15})
+  tray = new Tray(trayIcon)
+  const contextMenu = Menu.buildFromTemplate([
+    // {
+    //   label: '打开新建窗口',
+    //   click: () => {
+    //     openWelcomeWindow()
+    //   }
+    // },
+    {type: 'separator'},
+    {label: `退出${app.name}`, role: 'quit'}
+  ])
+  tray.setToolTip(app.name)
+  tray.setContextMenu(contextMenu)
+}
+
+// ==========构建系统托盘图标==========
+
 // ==========app事件监听==========
 app.on('ready', () => {
   openInitWindow()
+  createTray()
 })
 app.on('window-all-closed', () => {
-  // if (process.platform !== 'darwin') {
-  //   app.quit()
-  // }
-  app.quit()
+  if (process.platform !== 'darwin') {
+    app.quit()
+  }
 })
 app.on('open-file', (e, path) => {
   console.log('app on [open-file]')

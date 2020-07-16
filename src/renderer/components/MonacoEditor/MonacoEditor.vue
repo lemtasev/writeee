@@ -20,11 +20,11 @@
             <div class="info-box-r">
                 <span>
                     <span>段落</span>
-                    <input type="checkbox" v-model="editorOptions.lineNumbers" @change="setLineNumberOnOff"></input>
+                    <input type="checkbox" v-model="userSetting.editor.lineNumbers" @change="setLineNumberOnOff"></input>
                 </span>
                 <span>
                     <span>预览</span>
-                    <input type="checkbox" v-model="editorOptions.minimap" @change="setMiniMapOnOff"></input>
+                    <input type="checkbox" v-model="userSetting.editor.minimap" @change="setMiniMapOnOff"></input>
                 </span>
                 <span>{{item.modified ? '已修改' : ''}}</span>
                 <span>{{cursorPosition.lineNumber}}:{{cursorPosition.column}}</span>
@@ -61,6 +61,7 @@
 
   import fileService from '@/service/FileService'
   import * as monaco from 'monaco-editor'
+  import defaultSetting from '@/defaultSetting'
 
   export default {
     name: 'MonacoEditor',
@@ -83,10 +84,7 @@
       return {
         langName: 'wtee',
         monacoEditor: null,
-        editorOptions: {
-          lineNumbers: false,
-          minimap: false
-        },
+        userSetting: defaultSetting.defaultSetting,
 
         content: '',
         showEdit: false,
@@ -154,6 +152,7 @@
               console.error('文件过大，无法打开！')
               return
             }
+            if (ov && ov.path) this.viewState[ov.path] = this.monacoEditor.saveViewState() // 保存viewState
             this.readFile(v)
           }
         }
@@ -167,7 +166,7 @@
     },
     mounted () {
       console.log('mounted')
-      this.editorOptions = this.$electron.remote.getGlobal('sharedObject').userSetting.editor
+      this.userSetting = this.$electron.remote.getGlobal('sharedObject').userSetting
       let that = this
       let langName = this.langName
       // ==========初始化wtee主题==========
@@ -217,15 +216,16 @@
       this.monacoEditor = monaco.editor.create(this.$refs.monacoContainer, {
         // value: this.content,
         language: langName,
-        theme: langName, // 编辑器主题：vs, hc-black, or vs-dark
-        wordWrap: 'on', // 自动换行
-        lineNumbers: 'on', // 显示行号
+        // language: 'text/plain',
+        theme: this.userSetting.general.darkTheme ? 'vs-dark' : langName, // 编辑器主题：vs, hc-black, or vs-dark
+        wordWrap: this.userSetting.editor.wordWrap ? 'on' : 'off', // 自动换行
+        lineNumbers: this.userSetting.editor.lineNumbers ? 'on' : 'off', // 显示行号
         quickSuggestions: false, // 默认的提示
         automaticLayout: true, // 自动布局
-        lineHeight: 24,
-        // hideCursorInOverviewRuler: true, // 光标是否隐藏在概览标尺中。默认为false。
-        // overviewRulerBorder: false, // 控制是否应围绕总览标尺绘制边框。默认为true。
-        fontFamily: 'Microsoft YaHei',
+        fontSize: this.userSetting.editor.fontSize,
+        lineHeight: this.userSetting.editor.lineHeight,
+        fontFamily: this.userSetting.editor.fontFamily,
+        contextmenu: false, // 禁用默认右键菜单
         scrollBeyondLastLine: false // 启用滚动可以在最后一行之后移动一个屏幕大小。默认为true。
       })
       this.monacoEditor.onDidChangeModelContent(e => {
@@ -235,11 +235,11 @@
       })
       this.monacoEditor.onDidChangeModel(e => {
         // console.log('onDidChangeModel', e)
-        this.cursorPosition = {column: 1, lineNumber: 1}
-        if (this.viewState[this.item.path]) {
-          this.monacoEditor.restoreViewState(this.viewState[this.item.path])
-          this.cursorPosition = this.viewState[this.item.path].cursorState[0].position
-        }
+        // this.cursorPosition = {column: 1, lineNumber: 1}
+        // if (this.viewState[this.item.path]) {
+        //   this.monacoEditor.restoreViewState(this.viewState[this.item.path])
+        //   this.cursorPosition = this.viewState[this.item.path].cursorState[0].position
+        // }
       })
       this.monacoEditor.onDidBlurEditorText(_ => {
         // console.log('onDidBlurEditorText')
@@ -251,11 +251,42 @@
       })
       this.monacoEditor.onDidChangeCursorSelection(e => {
         // console.log('onDidChangeCursorSelection', e)
-        this.viewState[this.item.path] = this.monacoEditor.saveViewState()
       })
       this.monacoEditor.onDidScrollChange(e => {
         // console.log('onDidScrollChange', e)
-        this.viewState[this.item.path] = this.monacoEditor.saveViewState()
+      })
+      this.monacoEditor.onContextMenu((e) => {
+        // console.log('onContextMenu', e)
+        let userFolderContextMenuJson = [
+          {
+            label: '撤销',
+            // role: 'undo',
+            click: () => {
+              this.monacoEditor.getModel().undo()
+            }
+          },
+          {
+            label: '恢复',
+            // role: 'redo',
+            click: () => {
+              this.monacoEditor.getModel().redo()
+            }
+          },
+          {type: 'separator'},
+          {label: '剪切', role: 'cut'},
+          {label: '复制', role: 'copy'},
+          {label: '粘贴', role: 'paste'},
+          {
+            label: '全选',
+            // role: 'selectAll',
+            click: () => {
+              const range = this.monacoEditor.getModel().getFullModelRange()
+              this.monacoEditor.setSelection(range)
+            }
+          }
+        ]
+        let contextMenu = this.$electron.remote.Menu.buildFromTemplate(userFolderContextMenuJson)
+        contextMenu.popup({window: this.$electron.remote.getCurrentWindow()})
       })
       // ==========注册快捷键==========
       this.monacoEditor.addCommand(monaco.KeyMod.WinCtrl | monaco.KeyCode.US_SLASH, function () {
@@ -267,9 +298,6 @@
         that.saveContent()
       })
       // ==========注册快捷键==========
-      // console.log('All languages ==========', monaco.languages.getLanguages().map(it => {
-      //   return it.id
-      // }))
     },
     methods: {
       closeFileWithoutSave (wteeFile) {
@@ -311,16 +339,22 @@
         let model = monaco.editor.getModel(uri) // 如果该文档已经创建，打开则直接取得已存在的model
         if (!model) {
           // 否则创建新的model
-          this.$set(this.item, 'loading', true)
+          // this.$set(this.item, 'loading', true)
           let ret = fileService.readFileSync(wteeFile.path)
-          this.$set(this.item, 'loading', false)
-          model = monaco.editor.createModel(ret, this.langName, uri) // 如 code="console.log('hello')", language="javascript"
+          // this.$set(this.item, 'loading', false)
+          model = monaco.editor.createModel(ret, this.langName, uri)
         }
         let t2 = new Date().getTime()
         console.log('读【' + wteeFile.title + '】耗时', (t2 - t1))
         this.content = model.getValue()
         this.showEdit = true
         this.monacoEditor.setModel(model)
+
+        this.cursorPosition = {column: 1, lineNumber: 1}
+        if (this.viewState[this.item.path]) {
+          this.monacoEditor.restoreViewState(this.viewState[this.item.path]) // 恢复viewState
+          this.cursorPosition = this.viewState[this.item.path].cursorState[0].position
+        }
 
         this.setRevealRange(wteeFile.range)
         // ==========model==========
@@ -351,11 +385,11 @@
       },
       // 切换显示行号
       setLineNumberOnOff () {
-        this.monacoEditor.updateOptions({lineNumbers: this.editorOptions.lineNumbers ? 'on' : 'off'})
+        this.monacoEditor.updateOptions({lineNumbers: this.userSetting.editor.lineNumbers ? 'on' : 'off'})
       },
       // 切换显示小地图
       setMiniMapOnOff () {
-        this.monacoEditor.updateOptions({minimap: {enabled: this.editorOptions.minimap}})
+        this.monacoEditor.updateOptions({minimap: {enabled: this.userSetting.editor.minimap}})
       },
       // 获取model实例
       getModel (editor) {
