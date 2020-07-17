@@ -7,13 +7,19 @@
              @contextmenu="contextmenuHandler">
 
             <!--三角标-->
-            <i class="menu-icon-dir" :style="{marginLeft: (level * 20) + 'px'}"
-               :class="{'hidden' : !item.hasChild, 'el-icon-caret-bottom' : item.isOpen, 'el-icon-caret-right' : !item.isOpen}"
-               @click="openOrClose"></i>
+            <!--<i class="menu-icon-dir" :style="{marginLeft: (level * 20) + 'px'}"-->
+               <!--:class="{'hidden' : !item.hasChild, 'el-icon-caret-bottom' : item.isOpen, 'el-icon-caret-right' : !item.isOpen}"-->
+               <!--@click="openOrClose"></i>-->
+
+            <div class="fold-line-box">
+                <template v-for="index in level">
+                    <div class="fold-line"></div>
+                </template>
+            </div>
 
             <!--图标-->
-            <i v-if="item.fileType == fileTypeEnum.DIR" class="menu-icon"
-               :class="{'el-icon-folder-opened' : item.isOpen, 'el-icon-folder' : !item.isOpen}"></i>
+            <!--<i v-if="item.fileType == fileTypeEnum.DIR" class="menu-icon" :class="{'el-icon-folder-opened' : item.isOpen, 'el-icon-folder' : !item.isOpen}"></i>-->
+            <i v-if="item.fileType == fileTypeEnum.DIR" class="menu-icon el-icon-caret-right" :class="{'active' : item.isOpen}" @click="openOrClose"></i>
             <i v-else-if="item.fileType == fileTypeEnum.CHAPTER" class="menu-icon el-icon-document"></i>
             <i v-else-if="item.fileType == fileTypeEnum.IMG" class="menu-icon el-icon-picture"></i>
             <i v-else-if="item.fileType == fileTypeEnum.CHARACTER" class="menu-icon el-icon-user-solid"></i>
@@ -46,7 +52,7 @@
                 <TreeMenu :item="it" :index="i" :level="level + 1" :home="home"></TreeMenu>
             </template>
             <div v-show="!item.children" style="width: calc(100% - 20px);padding: 0 10px;">
-                <i class="el-icon-loading" :style="{marginLeft: (level * 20) + 'px'}"></i>
+                <i class="el-icon-loading" :style="{marginLeft: (level * 15) + 'px'}"></i>
             </div>
         </div>
 
@@ -308,6 +314,15 @@
         display: flex;
         align-items: center;
         cursor: pointer;
+        .fold-line-box {
+            height: 100%;
+            display: flex;
+            .fold-line {
+                margin-left: 15px;
+                height: 100%;
+                border-left: 1px dotted #ccc;
+            }
+        }
         .menu-icon-dir {
             font-size: 14px;
             padding: 0 5px;
@@ -319,6 +334,10 @@
             font-size: 20px;
             padding: 0 5px;
             /*font-weight: bold;*/
+            transition: all 0.3s;
+        }
+        .menu-icon.el-icon-caret-right.active {
+            transform: rotate(90deg);
         }
         .menu-title {
             /*overflow: hidden;*/
