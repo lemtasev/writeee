@@ -222,9 +222,15 @@
           this.openedFile = {}
           return
         }
-        let it = this.openedFileList[this.openedFileList.length - 1]
+        let newIndex
+        if (index > this.openedFileList.length - 1) {
+          newIndex = this.openedFileList.length - 1
+        } else {
+          newIndex = index
+        }
+        let it = this.openedFileList[newIndex]
         it.active = true
-        this.$set(this.openedFileList, this.openedFileList.length - 1, it)
+        this.$set(this.openedFileList, newIndex, it)
         this.openedFile = it
       },
       clickFile (wteeFile) {

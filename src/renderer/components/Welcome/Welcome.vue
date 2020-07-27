@@ -76,23 +76,23 @@
     },
     created () {
       console.log(`${this.$options.name} created`)
-      let that = this
+      // let that = this
       this.version = this.$electron.remote.getGlobal('sharedObject').version
       this.workspace = this.$electron.remote.getGlobal('sharedObject').defaultWorkspacePath
       openHistoryService.getOpenHistory().then(ret => {
         console.log(ret)
         this.openHistoryList = ret.reverse()
       })
-      document.onkeydown = function (e) {
-        if (that.activeIndex === 1) return
-        if (e.key === 'ArrowUp') {
-          that.onUpKeyDown()
-        } else if (e.key === 'ArrowDown') {
-          that.onDownKeyDown()
-        } else if (e.key === 'Enter') {
-          that.goWorkspace()
-        }
-      }
+      // document.onkeydown = function (e) {
+      //   if (that.activeIndex === 1) return
+      //   if (e.key === 'ArrowUp') {
+      //     that.onUpKeyDown()
+      //   } else if (e.key === 'ArrowDown') {
+      //     that.onDownKeyDown()
+      //   } else if (e.key === 'Enter') {
+      //     that.goWorkspace()
+      //   }
+      // }
     },
     mounted () {
     },
