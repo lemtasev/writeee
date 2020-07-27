@@ -60,8 +60,10 @@
   // require.config({'vs/nls': {availableLanguages: {'*': 'zh-cn'}}})
 
   import fileService from '@/service/FileService'
+  // import systemService from '@/service/SystemService'
   import * as monaco from 'monaco-editor'
   import defaultSetting from '@/defaultSetting'
+  // import merge from 'merge'
 
   export default {
     name: 'MonacoEditor',
@@ -84,37 +86,36 @@
       return {
         langName: 'wtee',
         monacoEditor: null,
-        userSetting: defaultSetting.defaultSetting,
+        userSetting: defaultSetting,
 
         content: '',
         showEdit: false,
         hints: [
           {
-            label: 'AaaBbb', // 显示的提示名称
-            insertText: 'AaaBbb',
+            label: '欧阳锋', // 显示的提示名称
+            insertText: '欧阳锋', // 此项没有的话，默认是label值
             kind: monaco.languages.CompletionItemKind.Function // 这里Function也可以是别的值，主要用来显示不同的图标
-            // 此项没有的话，默认是label值
             // detail: '' // 提示内容后的说明
             // documentation: '' // 点感叹号显示的详细说明
           },
           {
-            label: 'AAA',
-            insertText: 'AAA',
+            label: '赵四',
+            insertText: '赵四',
             kind: monaco.languages.CompletionItemKind.Text
           },
           {
-            label: 'BBB',
-            insertText: 'BBB',
+            label: '赵敏',
+            insertText: '赵敏',
             kind: monaco.languages.CompletionItemKind.Keyword
           },
           {
-            label: '111',
-            insertText: '111',
+            label: '张翠山',
+            insertText: '张翠山',
             kind: monaco.languages.CompletionItemKind.Snippet
           },
           {
-            label: '222',
-            insertText: '222',
+            label: '张无忌',
+            insertText: '张无忌',
             kind: monaco.languages.CompletionItemKind.Function
           },
           {
@@ -138,6 +139,10 @@
           console.log('item', v, ov)
           if (this.monacoEditor) {
             this.monacoEditor.focus()
+          }
+          if (v.path === 'Welcome') {
+            console.log('Welcome 不读')
+            return
           }
           if (ov && v.path === ov.path) {
             console.log('同一文件，不重复读')
@@ -165,141 +170,154 @@
       // }
     },
     mounted () {
-      console.log('mounted')
-      this.userSetting = this.$electron.remote.getGlobal('sharedObject').userSetting
-      let that = this
-      let langName = this.langName
-      // ==========初始化wtee主题==========
-      monaco.editor.defineTheme(langName, {
-        base: 'vs',
-        inherit: true,
-        rules: [
-          {token: 'custom-number', foreground: '#b7b3f2', fontStyle: 'bold'},
-          {token: 'custom-zh', foreground: '#808080'},
-          {token: 'custom-en', foreground: '#2299ff'}
-        ]
-      })
-      monaco.languages.register({id: langName})
-      monaco.languages.setMonarchTokensProvider(langName, {
-        tokenizer: {
-          root: [
-            [/\d+/, {token: 'custom-number'}], // 数字
-            [/[a-zA-Z]+/, {token: 'custom-en'}], // 英文
-            [/[\u4e00-\u9fa5]+/, {token: 'custom-zh'}] // 中文
-          ]
-        }
-      })
-      monaco.languages.registerCompletionItemProvider(langName, {
-        provideCompletionItems (model, position) {
-          return {
-            suggestions: that.hints
-          }
-        }
-      })
-      // monaco.languages.registerHoverProvider(langName, {
-      //   provideHover: function (model, position, token) {
-      //     return Promise.resolve({
-      //       contents: [ { value: 'hello world' } ],
-      //       range: { startLineNumber: 5, startColumn: 1, endLineNumber: 5, endColumn: 1 }
-      //     })
-      //   }
-      // })
-      // monaco.languages.registerDefinitionProvider(langName, {
-      //   provideDefinition: function (model, position, token) {
-      //     return Promise.resolve([{
-      //       uri: monaco.Uri.parse('http://host/to_file_name'),
-      //       range: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 }
-      //     }])
-      //   }
-      // })
-      // ==========初始化wtee主题==========
-      this.monacoEditor = monaco.editor.create(this.$refs.monacoContainer, {
-        // value: this.content,
-        language: langName,
-        // language: 'text/plain',
-        theme: this.userSetting.general.darkTheme ? 'vs-dark' : langName, // 编辑器主题：vs, hc-black, or vs-dark
-        wordWrap: this.userSetting.editor.wordWrap ? 'on' : 'off', // 自动换行
-        lineNumbers: this.userSetting.editor.lineNumbers ? 'on' : 'off', // 显示行号
-        quickSuggestions: false, // 默认的提示
-        automaticLayout: true, // 自动布局
-        fontSize: this.userSetting.editor.fontSize,
-        lineHeight: this.userSetting.editor.lineHeight,
-        fontFamily: this.userSetting.editor.fontFamily,
-        contextmenu: false, // 禁用默认右键菜单
-        scrollBeyondLastLine: false // 启用滚动可以在最后一行之后移动一个屏幕大小。默认为true。
-      })
-      this.monacoEditor.onDidChangeModelContent(e => {
-        // console.log('onDidChangeModelContent', e)
-        this.content = this.monacoEditor.getValue()
-        this.docModified(true)
-      })
-      this.monacoEditor.onDidChangeModel(e => {
-        // console.log('onDidChangeModel', e)
-        // this.cursorPosition = {column: 1, lineNumber: 1}
-        // if (this.viewState[this.item.path]) {
-        //   this.monacoEditor.restoreViewState(this.viewState[this.item.path])
-        //   this.cursorPosition = this.viewState[this.item.path].cursorState[0].position
-        // }
-      })
-      this.monacoEditor.onDidBlurEditorText(_ => {
-        // console.log('onDidBlurEditorText')
-        // this.saveContent()
-      })
-      this.monacoEditor.onDidChangeCursorPosition(e => {
-        // console.log('onDidChangeCursorPosition', e)
-        this.cursorPosition = e.position
-      })
-      this.monacoEditor.onDidChangeCursorSelection(e => {
-        // console.log('onDidChangeCursorSelection', e)
-      })
-      this.monacoEditor.onDidScrollChange(e => {
-        // console.log('onDidScrollChange', e)
-      })
-      this.monacoEditor.onContextMenu((e) => {
-        // console.log('onContextMenu', e)
-        let userFolderContextMenuJson = [
-          {
-            label: '撤销',
-            // role: 'undo',
-            click: () => {
-              this.monacoEditor.getModel().undo()
-            }
-          },
-          {
-            label: '恢复',
-            // role: 'redo',
-            click: () => {
-              this.monacoEditor.getModel().redo()
-            }
-          },
-          {type: 'separator'},
-          {label: '剪切', role: 'cut'},
-          {label: '复制', role: 'copy'},
-          {label: '粘贴', role: 'paste'},
-          {
-            label: '全选',
-            // role: 'selectAll',
-            click: () => {
-              const range = this.monacoEditor.getModel().getFullModelRange()
-              this.monacoEditor.setSelection(range)
-            }
-          }
-        ]
-        let contextMenu = this.$electron.remote.Menu.buildFromTemplate(userFolderContextMenuJson)
-        contextMenu.popup({window: this.$electron.remote.getCurrentWindow()})
-      })
-      // ==========注册快捷键==========
-      this.monacoEditor.addCommand(monaco.KeyMod.WinCtrl | monaco.KeyCode.US_SLASH, function () {
-        console.log('提示')
-        that.monacoEditor.trigger('提示', 'editor.action.triggerSuggest', {})
-      })
-      this.monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_S, function () {
-        console.log('快捷键保存当前文件')
-        that.saveContent()
-      })
-      // ==========注册快捷键==========
+      console.log(`${this.$options.name} mounted`)
+      this.initMonaco()
     },
     methods: {
+      async initMonaco () {
+        let userSetting = this.$electron.remote.getGlobal('sharedObject').userSetting
+        // if (!userSetting) {
+        //   let ret = await systemService.findUserSetting('userSetting')
+        //   if (ret && ret.length > 0) {
+        //     userSetting = ret[0].value
+        //   }
+        //   userSetting = merge(defaultSetting, userSetting)
+        //   console.log('userSetting', userSetting)
+        //   this.$electron.remote.getGlobal('sharedObject').userSetting = userSetting
+        // }
+        this.userSetting = userSetting
+        let that = this
+        let langName = this.langName
+        // ==========初始化wtee主题==========
+        monaco.editor.defineTheme(langName, {
+          base: 'vs',
+          inherit: true,
+          rules: [
+            {token: 'custom-number', foreground: '#b7b3f2', fontStyle: 'bold'},
+            {token: 'custom-zh', foreground: '#808080'},
+            {token: 'custom-en', foreground: '#2299ff'}
+          ]
+        })
+        monaco.languages.register({id: langName})
+        monaco.languages.setMonarchTokensProvider(langName, {
+          tokenizer: {
+            root: [
+              [/\d+/, {token: 'custom-number'}], // 数字
+              [/[a-zA-Z]+/, {token: 'custom-en'}], // 英文
+              [/[\u4e00-\u9fa5]+/, {token: 'custom-zh'}] // 中文
+            ]
+          }
+        })
+        monaco.languages.registerCompletionItemProvider(langName, {
+          provideCompletionItems (model, position) {
+            return {
+              suggestions: that.hints
+            }
+          }
+        })
+        // monaco.languages.registerHoverProvider(langName, {
+        //   provideHover: function (model, position, token) {
+        //     return Promise.resolve({
+        //       contents: [ { value: 'hello world' } ],
+        //       range: { startLineNumber: 5, startColumn: 1, endLineNumber: 5, endColumn: 1 }
+        //     })
+        //   }
+        // })
+        // monaco.languages.registerDefinitionProvider(langName, {
+        //   provideDefinition: function (model, position, token) {
+        //     return Promise.resolve([{
+        //       uri: monaco.Uri.parse('http://host/to_file_name'),
+        //       range: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 }
+        //     }])
+        //   }
+        // })
+        // ==========初始化wtee主题==========
+        this.monacoEditor = monaco.editor.create(this.$refs.monacoContainer, {
+          // value: this.content,
+          language: langName,
+          // language: 'text/plain',
+          theme: this.userSetting.general.darkTheme ? 'vs-dark' : langName, // 编辑器主题：vs, hc-black, or vs-dark
+          wordWrap: this.userSetting.editor.wordWrap ? 'on' : 'off', // 自动换行
+          lineNumbers: this.userSetting.editor.lineNumbers ? 'on' : 'off', // 显示行号
+          quickSuggestions: false, // 默认的提示
+          automaticLayout: true, // 自动布局
+          fontSize: this.userSetting.editor.fontSize,
+          lineHeight: this.userSetting.editor.lineHeight,
+          fontFamily: this.userSetting.editor.fontFamily,
+          contextmenu: false, // 禁用默认右键菜单
+          scrollBeyondLastLine: false // 启用滚动可以在最后一行之后移动一个屏幕大小。默认为true。
+        })
+        this.monacoEditor.onDidChangeModelContent(e => {
+          // console.log('onDidChangeModelContent', e)
+          this.content = this.monacoEditor.getValue()
+          this.docModified(true)
+        })
+        this.monacoEditor.onDidChangeModel(e => {
+          // console.log('onDidChangeModel', e)
+          // this.cursorPosition = {column: 1, lineNumber: 1}
+          // if (this.viewState[this.item.path]) {
+          //   this.monacoEditor.restoreViewState(this.viewState[this.item.path])
+          //   this.cursorPosition = this.viewState[this.item.path].cursorState[0].position
+          // }
+        })
+        this.monacoEditor.onDidBlurEditorText(_ => {
+          // console.log('onDidBlurEditorText')
+          // this.saveContent()
+        })
+        this.monacoEditor.onDidChangeCursorPosition(e => {
+          // console.log('onDidChangeCursorPosition', e)
+          this.cursorPosition = e.position
+        })
+        this.monacoEditor.onDidChangeCursorSelection(e => {
+          // console.log('onDidChangeCursorSelection', e)
+        })
+        this.monacoEditor.onDidScrollChange(e => {
+          // console.log('onDidScrollChange', e)
+        })
+        this.monacoEditor.onContextMenu((e) => {
+          // console.log('onContextMenu', e)
+          let userFolderContextMenuJson = [
+            {
+              label: '撤销',
+              // role: 'undo',
+              click: () => {
+                this.monacoEditor.getModel().undo()
+              }
+            },
+            {
+              label: '恢复',
+              // role: 'redo',
+              click: () => {
+                this.monacoEditor.getModel().redo()
+              }
+            },
+            {type: 'separator'},
+            {label: '剪切', role: 'cut'},
+            {label: '复制', role: 'copy'},
+            {label: '粘贴', role: 'paste'},
+            {
+              label: '全选',
+              // role: 'selectAll',
+              click: () => {
+                const range = this.monacoEditor.getModel().getFullModelRange()
+                this.monacoEditor.setSelection(range)
+              }
+            }
+          ]
+          let contextMenu = this.$electron.remote.Menu.buildFromTemplate(userFolderContextMenuJson)
+          contextMenu.popup({window: this.$electron.remote.getCurrentWindow()})
+        })
+        // ==========注册快捷键==========
+        this.monacoEditor.addCommand(monaco.KeyMod.WinCtrl | monaco.KeyCode.US_SLASH, function () {
+          console.log('提示：WinCtrl + ?')
+          that.monacoEditor.trigger('提示', 'editor.action.triggerSuggest', {})
+        })
+        this.monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_S, function () {
+          console.log('快捷键保存当前文件')
+          that.saveContent()
+        })
+        // ==========注册快捷键==========
+      },
       closeFileWithoutSave (wteeFile) {
         console.log('关闭不保存文件', wteeFile)
         let uri = monaco.Uri.parse('file://' + wteeFile.path)

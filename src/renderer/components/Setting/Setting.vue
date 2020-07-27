@@ -131,7 +131,7 @@
     },
     data () {
       return {
-        userSetting: defaultSetting.defaultSetting
+        userSetting: defaultSetting
       }
     },
     beforeCreate () {

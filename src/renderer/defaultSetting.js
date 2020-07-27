@@ -13,6 +13,4 @@ let defaultSetting = {
   }
 }
 
-export default {
-  defaultSetting: defaultSetting
-}
+export default defaultSetting

@@ -19,6 +19,7 @@
   import systemService from '@/service/SystemService'
   // import * as openHistoryService from '@/service/OpenHistoryService'
   import merge from 'merge'
+  import defaultSetting from '@/defaultSetting'
 
   export default {
     name: 'Init',
@@ -41,14 +42,16 @@
           console.log('init ready')
           console.log('workspace', this.workspace)
           setTimeout(() => {
-            if (this.workspace) {
-              // open home page
-              this.$electron.remote.getGlobal('sharedObject').workspace = this.workspace
-              this.$electron.ipcRenderer.send('open-main-window')
-            } else {
-              // open Welcome page
-              this.$electron.ipcRenderer.send('open-welcome-window')
-            }
+            this.$electron.remote.getGlobal('sharedObject').workspace = this.workspace
+            this.$electron.ipcRenderer.send('open-main-window')
+            // if (this.workspace) {
+            //   // open home page
+            //   this.$electron.remote.getGlobal('sharedObject').workspace = this.workspace
+            //   this.$electron.ipcRenderer.send('open-main-window')
+            // } else {
+            //   // open Welcome page
+            //   this.$electron.ipcRenderer.send('open-welcome-window')
+            // }
             // close this page
             this.$electron.remote.getCurrentWindow().close()
             this.$electron.remote.getCurrentWindow().setProgressBar(-1) // 任务栏进度条
@@ -85,7 +88,7 @@
             if (ret && ret.length > 0) {
               userSetting = ret[0].value
             }
-            let defaultSetting = require('@/defaultSetting.js').default.defaultSetting
+            // let defaultSetting = require('@/defaultSetting.js').default.defaultSetting
             userSetting = merge(defaultSetting, userSetting)
             console.log(userSetting)
             that.$electron.remote.getGlobal('sharedObject').userSetting = userSetting

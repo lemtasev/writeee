@@ -83,6 +83,8 @@
   import * as openHistoryService from '@/service/OpenHistoryService'
   import Search from '@/components/Search/Search'
   import Setting from '@/components/Setting/Setting'
+  // import defaultSetting from '@/defaultSetting'
+  // import merge from 'merge'
 
   export default {
     name: 'Home',
@@ -98,10 +100,11 @@
         asideWidth: 200,
         workspace: '',
 
-        files: [],
-        openedFile: {}, // 打开的文件
-        openedFileList: [], // 打开的文件列表
+        files: [], // 资源管理器菜单
         activeFile: {}, // 菜单激活的文件
+
+        openedFile: {}, // 工作区打开的文件
+        openedFileList: [], // 工作区打开的文件列表
 
         search: {
           visible: false,
@@ -109,10 +112,10 @@
         },
         setting: {
           visible: false
-        },
+        }
 
-        settingKey: '',
-        settingValue: ''
+        // settingKey: '',
+        // settingValue: ''
       }
     },
     watch: {
@@ -125,6 +128,18 @@
     },
     created () {
       console.log(`${this.$options.name} created`)
+      if (this.openedFileList.length === 0) {
+        let welcome = {
+          active: true,
+          path: 'Welcome',
+          modified: false,
+          fileType: fileService.fileTypeEnum.UNKNOWN,
+          title: 'Welcome'
+        }
+        this.openFile(welcome)
+      }
+      this.workspace = this.$electron.remote.getGlobal('sharedObject').workspace
+      this.initHome(this.workspace)
       // ==========事件监听==========
       this.$electron.ipcRenderer.on('ready-to-show', (event, args) => {
         systemService.findUserSetting('mainWindowBounds').then(ret => {
@@ -143,14 +158,16 @@
         this.openSearchPage()
       })
       // ==========事件监听==========
-      this.workspace = this.$electron.remote.getGlobal('sharedObject').workspace
-      this.initHome(this.workspace)
     },
     mounted () {
     },
     methods: {
       async initHome (workspace) {
         if (!workspace) {
+          workspace = await openHistoryService.getLatestOpenHistory()
+        }
+        if (!workspace) {
+          this.$electron.ipcRenderer.send('refresh-app-menu', {openRecentSubmenuLi: []})
           return
         }
         // 读目录
@@ -238,18 +255,18 @@
         // }
         wteeFile.active = true
         this.openedFileList.push(wteeFile)
-        this.$refs.MainTabs.tabbarScrollTo(this.openedFileList.length - 1)
+        this.$refs.MainTabs && this.$refs.MainTabs.tabbarScrollTo(this.openedFileList.length - 1)
       },
-      saveSetting () {
-        systemService.saveUserSetting(this.settingKey, this.settingValue).then(ret => {
-          console.log(ret)
-        })
-      },
-      findSetting () {
-        systemService.findUserSetting(this.settingKey).then(ret => {
-          console.log(ret)
-        })
-      },
+      // saveSetting () {
+      //   systemService.saveUserSetting(this.settingKey, this.settingValue).then(ret => {
+      //     console.log(ret)
+      //   })
+      // },
+      // findSetting () {
+      //   systemService.findUserSetting(this.settingKey).then(ret => {
+      //     console.log(ret)
+      //   })
+      // },
       findFiles (path) {
         fileService.findFiles(path).then(ret => {
           this.files = ret

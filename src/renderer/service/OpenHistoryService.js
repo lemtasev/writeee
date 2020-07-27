@@ -48,6 +48,7 @@ export async function saveOpenHistory (path) {
   if (li.includes(path)) {
     li.splice(li.indexOf(path), 1)
   }
+  // 保存20条打开记录
   if (li.length >= 20) {
     li.splice(0, 1)
   }

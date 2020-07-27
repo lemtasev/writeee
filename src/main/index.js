@@ -13,6 +13,8 @@ if (process.env.NODE_ENV !== 'development') {
   global.__static = path.join(__dirname, '/static').replace(/\\/g, '\\\\')
 }
 
+const isMac = process.platform === 'darwin'
+
 const winURL = process.env.NODE_ENV === 'development'
   ? `http://localhost:9080`
   : `file://${__dirname}/index.html`
@@ -20,7 +22,7 @@ const winURL = process.env.NODE_ENV === 'development'
 let baseIcon = nativeImage.createFromPath(path.join(__static, '/icon.jpg'))
 
 let initWindow = null
-let welcomeWindow = null
+// let welcomeWindow = null
 let mainWindow = null
 
 /**
@@ -58,47 +60,47 @@ function openInitWindow () {
 /**
  * 打开欢迎窗口
  */
-function openWelcomeWindow () {
-  if (welcomeWindow != null) {
-    welcomeWindow.show()
-    return
-  }
-  createWelcomeWindow()
-}
+// function openWelcomeWindow () {
+//   if (welcomeWindow != null) {
+//     welcomeWindow.show()
+//     return
+//   }
+//   createWelcomeWindow()
+// }
 
 /**
  * 创建欢迎窗口
  * @param callback
  */
-function createWelcomeWindow () {
-  welcomeWindow = new BrowserWindow({
-    title: 'Welcome to Writee',
-    backgroundColor: '#2e2c29',
-    resizable: process.env.NODE_ENV === 'development',
-    maximizable: false,
-    useContentSize: true,
-    show: false,
-    width: 777,
-    height: 460,
-    webPreferences: {
-      nodeIntegration: true // 在网页中集成Node
-    }
-  })
-  welcomeWindow.loadURL(winURL + '#Welcome')
-  welcomeWindow.once('ready-to-show', () => {
-    welcomeWindow.show()
-  })
-  welcomeWindow.on('show', () => {
-    welcomeWindow.webContents.send('show')
-  })
-  welcomeWindow.on('close', (event) => {
-    // welcomeWindow.hide()
-    // event.preventDefault()
-  })
-  welcomeWindow.on('closed', () => {
-    welcomeWindow = null
-  })
-}
+// function createWelcomeWindow () {
+//   welcomeWindow = new BrowserWindow({
+//     title: 'Welcome to Writee',
+//     backgroundColor: '#2e2c29',
+//     resizable: process.env.NODE_ENV === 'development',
+//     maximizable: false,
+//     useContentSize: true,
+//     show: false,
+//     width: 777,
+//     height: 460,
+//     webPreferences: {
+//       nodeIntegration: true // 在网页中集成Node
+//     }
+//   })
+//   welcomeWindow.loadURL(winURL + '#Welcome')
+//   welcomeWindow.once('ready-to-show', () => {
+//     welcomeWindow.show()
+//   })
+//   welcomeWindow.on('show', () => {
+//     welcomeWindow.webContents.send('show')
+//   })
+//   welcomeWindow.on('close', (event) => {
+//     // welcomeWindow.hide()
+//     // event.preventDefault()
+//   })
+//   welcomeWindow.on('closed', () => {
+//     welcomeWindow = null
+//   })
+// }
 
 /**
  * 打开主窗口
@@ -164,14 +166,13 @@ function showOpen () {
   } else {
     openMainWindow()
   }
-  if (welcomeWindow != null) {
-    welcomeWindow.hide()
-  }
+  // if (welcomeWindow != null) {
+  //   welcomeWindow.hide()
+  // }
 }
 
 // ==========构建菜单==========
 async function createMenu (opt) {
-  const isMac = process.platform === 'darwin'
   const original = opt && opt.original
   let openRecentSubmenu = []
   if (opt && opt.openRecentSubmenuLi) {
@@ -360,12 +361,12 @@ function createTray () {
   let trayIcon = baseIcon.resize({width: 15, height: 15})
   tray = new Tray(trayIcon)
   const contextMenu = Menu.buildFromTemplate([
-    // {
-    //   label: '打开新建窗口',
-    //   click: () => {
-    //     openWelcomeWindow()
-    //   }
-    // },
+    {
+      label: `显示${app.name}`,
+      click: () => {
+        openMainWindow()
+      }
+    },
     {type: 'separator'},
     {label: `退出${app.name}`, role: 'quit'}
   ])
@@ -378,10 +379,11 @@ function createTray () {
 // ==========app事件监听==========
 app.on('ready', () => {
   openInitWindow()
+  // openMainWindow()
   createTray()
 })
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  if (!isMac) {
     app.quit()
   }
 })
@@ -391,11 +393,7 @@ app.on('open-file', (e, path) => {
   console.log(path)
 })
 app.on('activate', () => {
-  if (mainWindow !== null) {
-    openMainWindow()
-  } else {
-    openWelcomeWindow()
-  }
+  openMainWindow()
 })
 // ==========app事件监听==========
 
@@ -409,14 +407,14 @@ ipcMain.on('show-open', (event, args) => {
   showOpen()
 })
 // 打开指定工作空间
-ipcMain.on('open-workspace', (event, args) => {
-  openMainWindow()
-  global.sharedObject.workspace = args
-})
+// ipcMain.on('open-workspace', (event, args) => {
+//   openMainWindow()
+//   global.sharedObject.workspace = args
+// })
 // 打开welcome页面
-ipcMain.on('open-welcome-window', (event, args) => {
-  openWelcomeWindow()
-})
+// ipcMain.on('open-welcome-window', (event, args) => {
+//   openWelcomeWindow()
+// })
 // 打开主页面
 ipcMain.on('open-main-window', (event, args) => {
   openMainWindow()

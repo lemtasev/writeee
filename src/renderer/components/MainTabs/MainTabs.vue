@@ -38,7 +38,11 @@
 
         <div class="main-container">
 
-            <MonacoEditor ref="MonacoEditor" :home="home" :item="openedFile"></MonacoEditor>
+            <div v-show="openedFileList.length === 0" style="width: 100%;height: 100%;display: flex;align-items: center;justify-content: center;">
+                None Tab
+            </div>
+            <Welcome v-show="openedFileList.length > 0 && openedFile.path === 'Welcome'"></Welcome>
+            <MonacoEditor v-show="openedFileList.length > 0 && openedFile.path !== 'Welcome'" ref="MonacoEditor" :home="home" :item="openedFile"></MonacoEditor>
 
         </div>
 
@@ -46,12 +50,13 @@
 </template>
 
 <script>
+  import Welcome from '@/components/Welcome/Welcome'
   import MonacoEditor from '@/components/MonacoEditor/MonacoEditor'
   import fileService from '@/service/FileService'
 
   export default {
     name: 'MainTabs',
-    components: {MonacoEditor},
+    components: {Welcome, MonacoEditor},
     props: {
       home: {
         type: Object,
