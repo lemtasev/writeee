@@ -58,7 +58,7 @@
   "dependencies": {
     "axios": "^0.18.0",
     "element-ui": "^2.13.1",
-    "merge": "^1.2.1",
+    "merge": "^2.1.1",
     "moment": "^2.25.3",
     "monaco-editor": "^0.20.0",
     "nedb": "^1.8.0",
